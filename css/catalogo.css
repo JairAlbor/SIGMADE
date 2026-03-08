@@ -1,0 +1,65 @@
+:root {
+    --marron-sigmade: #6b1d2e; /* El color de tu barra superior */
+    --verde-sigmade: #00a843;
+    --gris-fondo: #f8f9fa;
+    --borde-suave: #e0e4e8;
+}
+
+/* Contenedor del Formulario */
+.form-card {
+    background: white;
+    border: 1px solid #d1e3f8; /* El azul clarito de tu imagen */
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr; /* Proporciones de los inputs */
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+/* Inputs y Selects */
+input, select {
+    padding: 10px;
+    border: 1px solid var(--borde-suave);
+    border-radius: 8px;
+    outline: none;
+}
+
+/* Botones */
+.btn-principal {
+    background-color: var(--marron-sigmade);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-exito {
+    background-color: var(--verde-sigmade);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-secundario {
+    background: white;
+    border: 1px solid var(--borde-suave);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Clase para ocultar */
+.hidden {
+    display: none;
+}

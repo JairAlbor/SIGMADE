@@ -1,118 +1,91 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Catálogo de Material</title>
-    <link rel="stylesheet" href="css/nav-bar.css">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
+    <link rel="stylesheet" href="css/nav-bar.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/catalogo.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="logo">SIGMADE</div>
 
-  <nav class="navbar">
-  <div class="logo">SIGMADE</div>
+      <ul class="nav-menu">
+        <li
+          class="nav-item"
+          onclick="window.location.href = 'administracion.html'"
+        >
+          Inicio
+        </li>
+        <li class="nav-item active">Catalogo</li>
+        <li class="nav-item" onclick="window.location.href = 'profile.html'">
+          Perfil
+        </li>
+      </ul>
 
-  <ul class="nav-menu">
-    <li class="nav-item" onclick="window.location.href='administracion.html'">Inicio</li>
-    <li class="nav-item active">Catalogo</li>
-    <li class="nav-item" onclick="window.location.href='profile.html'">Perfil</li>
-  </ul>
+      <div class="top-bar-user">
+        <div class="notification-wrapper">
+          <i data-lucide="bell" class="icon-bell"></i>
+          <span class="notification-dot"></span>
+        </div>
 
-  <div class="top-bar-user">
-    <div class="notification-wrapper">
-      <i data-lucide="bell" class="icon-bell"></i>
-      <span class="notification-dot"></span>
-    </div>
-
-    <div class="user-pill">
-      <div class="user-avatar">
-        <i data-lucide="user" class="icon-user"></i>
+        <div class="user-pill">
+          <div class="user-avatar">
+            <i data-lucide="user" class="icon-user"></i>
+          </div>
+          <span id="userName" class="user-name">Hola, Jair</span>
+        </div>
       </div>
-      <span id="userName" class="user-name">Hola, Jair</span>
-    </div>
-  </div>
-</nav>
-
-    <main class="form-container">
-        <header class="catalog-header">
-            <h2 class="dashboard-title">Catálogo de Material</h2>
-            <button class="btn-add" onclick="openModal()">
-                <i class="fa-solid fa-plus"></i> Agregar Material
-            </button>
-        </header>
-
-        <div class="search-stats-grid">
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Buscar material por nombre o categoría...">
-            </div>
-            <div class="stat-pill blue">
-                <span id="totalItems">12</span> Artículos
-            </div>
-            <div class="stat-pill green">
-                <span id="totalAvailable">71</span> Disponibles
-            </div>
-        </div>
-
-        <div class="table-wrapper">
-            <table id="catalogTable">
-                <thead>
-                    <tr>
-                        <th>Artículo</th>
-                        <th>Categoría</th>
-                        <th class="text-center">Total</th>
-                        <th class="text-center">Disponible</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Matemáticas Avanzadas</strong></td>
-                        <td><span class="badge badge-libro">Libro</span></td>
-                        <td class="text-center">5</td>
-                        <td class="text-center text-green">3</td>
-                        <td class="text-center">
-                            <div class="actions">
-                                <button class="btn-icon edit"><i class="fa-solid fa-pen"></i></button>
-                                <button class="btn-icon delete" onclick="deleteRow(this)"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    </tbody>
-            </table>
-        </div>
-    </main>
-
-    <div id="modalOverlay" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Nuevo Material</h3>
-            <div class="form-grid-modal">
-<label for="mat">Material</label>
-<select id="mat" name="mat">
-    <option value="">Selecciona una opcion</option>
-</select>
-
-                <label for="disci">Disciplina</label>
-                <select name="disci" id="disci">
-                    <option value="">Selecciona una opcion...</option>
-                    <option value="Futbol">Futbol</option>
-                    <option value="Libro">Basquet bol</option>
-                    <option value="Deporte">Escolta</option>
-                    <option value="Ajedrez">Ajedrez</option>
-                    <option value="Banda-Guerra">Banda de guerra</option>
-                </select>
-
-                <input type="text" placeholder="Nombre del artículo">
-                <input type="number" placeholder="Cantidad Total">
-            </div>
-            <div class="form-actions">
-                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-                <button class="btn-save">Guardar</button>
-            </div>
-        </div>
+    </nav>
+    <div class="form-container">
+    <div class="header-catalogo">
+      <h1>Catálogo de Material</h1>
+      <button id="btn-abrir-formulario" class="btn-principal">
+        + Agregar Material
+      </button>
     </div>
 
-    <script src="modal.js"></script>
-</body>
+    <div id="contenedor-formulario" class="form-card hidden">
+      <h3>Nuevo Material</h3>
+      <div class="form-grid">
+        <input type="text" placeholder="Nombre del artículo" />
+        <select id="disciplina" name="disciplina">
+          <option>Seleccionar disciplina</option>
+          <option value="Futbol">Balones</option>
+          <option value="basquelbol">basqutkbol</option>
+          <option value="ajedrez">Ajedrez</option>
+          <option value="escolta">Escolta</option>
+        </select>
+        <select name="estado" id="estado">
+          <option>Seleccionar estado</option>
+          <option value="Nuevo">Nuevo</option>
+          <option value="Seminuevo">Seminuevo</option>
+          <option value="Desgastado">Desgastado</option>
+          <option value="Muy-desgastado">Muy Desgastado</option>
+          <option value="Roto">Roto</option>
+        </select>
+        <select name="disponible" id="disponible">
+          <option>¿Disponible?</option>
+          <option value="Si">Sí</option>
+          <option value="No">No</option>
+        </select>
+        <label for="imagen">Ingresa una imagen del articulo</label>
+        <input type="file" id="imagen" name="imagen" accept="image/*" />
+      </div>
+      <div class="form-actions">
+        <button id="btn-cancelar" class="btn-secundario">Cancelar</button>
+        <button id="btn-exito" class="btn-exito">Guardar Material</button>
+      </div>
+    </div>
+
+    <div class="tabla-container"></div>
+    </div>
+    <script src="modal-js/modal-catalogo.js"></script>
+  </body>
 </html>
