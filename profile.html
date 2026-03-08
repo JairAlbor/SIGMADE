@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perfil</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/nav-bar.css">
+    <link rel="stylesheet" href="css/profile.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="logo">SIGMADE</div>
+
+      <ul class="nav-menu">
+        <li class="nav-item" onclick="window.location.href='Dashboard.html'">Inicio</li>
+        <li class="nav-item">Catalogo</li>
+        <li class="nav-item active">Perfil</li>
+      </ul>
+
+      <div class="top-bar-user">
+        <div class="notification-wrapper">
+          <i data-lucide="bell" class="icon-bell"></i>
+          <span class="notification-dot"></span>
+        </div>
+
+        <div class="user-pill">
+          <div class="user-avatar">
+            <i data-lucide="user" class="icon-user"></i>
+          </div>
+          <span id="userName" class="user-name">Hola, Juan</span>
+        </div>
+      </div>
+    </nav>
+
+    <section class="form-container">
+      <main class="dashboard-container profile-page">
+        <h1 class="dashboard-title">Mi Perfil</h1>
+
+        <div class="profile-grid">
+          <section class="profile-main-card">
+            <div class="profile-header">
+              <div class="profile-avatar-large">
+                <i data-lucide="user"></i>
+              </div>
+              <div class="profile-header-info">
+                <h2>Juan Pérez</h2>
+                <p>Miembro desde Enero 2024</p>
+                <button class="btn-edit">Editar Perfil</button>
+              </div>
+            </div>
+
+            <hr class="divider" />
+
+            <div class="profile-details">
+              <div class="detail-item">
+                <i data-lucide="mail"></i>
+                <span>juan.perez@example.com</span>
+              </div>
+              <div class="detail-item">
+                <i data-lucide="phone"></i>
+                <span>+52 123 456 7890</span>
+              </div>
+              <div class="detail-item">
+                <i data-lucide="map-pin"></i>
+                <span>Ciudad de México, México</span>
+              </div>
+              <div class="detail-item">
+                <i data-lucide="calendar"></i>
+                <span>Fecha de nacimiento: 15 de Marzo, 1995</span>
+              </div>
+            </div>
+          </section>
+
+          <aside class="profile-stats">
+            <div class="stat-card">
+              <div class="stat-header">
+                <i data-lucide="credit-card"></i>
+                <span>Préstamos activos</span>
+              </div>
+              <span class="stat-value">0</span>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <i data-lucide="calendar-check"></i>
+                <span>Eventos asistidos</span>
+              </div>
+              <span class="stat-value">12</span>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <i data-lucide="medal"></i>
+                <span>Puntos acumulados</span>
+              </div>
+              <span class="stat-value">350</span>
+            </div>
+          </aside>
+        </div>
+
+        <section class="activity-section">
+          <h3>Actividad Reciente</h3>
+          <div class="activity-placeholder"></div>
+        </section>
+      </main>
+    </section>
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

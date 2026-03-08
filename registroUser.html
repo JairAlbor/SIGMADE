@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Artículos</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="logo">SIGMADE</div>
+    </nav>
+    <section class="form-container">
+      <h2>Registrar Nuevo Usuario</h2>
+      <form id="formUsuarios">
+        
+        <div class="form-group">
+          <label for="nombre">Id</label>
+          <input
+            type="text"
+            id="iden"
+            name="iden"
+            placeholder="Matricula/numero de trabajador"
+            required
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="nombre">Nombre(s)</label>
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            placeholder="Ingresa tu nombre completo"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="apellidos">Apellidos</label>
+          <input
+            type="text"
+            id="apellidos"
+            name="apellidos"
+            placeholder="Ingresa tus apellidos"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Correo electronico</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Ingresa tu correo"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Ingresa un nueva contraseña"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="tel">Numero telefonico</label>
+          <input
+            type="tel"
+            id="tel"
+            name="tel"
+            placeholder="Ingresa tu numero telefonico"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="disciplina">Relacion con la UTM:</label>
+          <select id="disciplina" name="disciplina" required>
+            <option value="">Selecciona una opción</option>
+            <option value="Alumno">Alumno</option>
+            <option value="Docente">Entrenador</option>
+            <option value="Admin">Administrador</option>
+            <option value="Operador">Operador</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="estatus">Estatus</label>
+          <select id="estatus" name="estatus" required>
+            <option value="">Selecciona una opción</option>
+            <option value="Activo">Activo</option>
+            <option value="Sancionado">Sancionado</option>
+            <option value="Graduado">Graduado</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Frecuencia</label>
+          <div class="radio-group">
+            <input
+              type="radio"
+              id="Continua"
+              name="frecuencia"
+              value="Continua"
+              required
+            />
+            <label for="Continua">Continua</label>
+            <input
+              type="radio"
+              id="pocoFrec"
+              name="frecuencia"
+              value="pocoFrec"
+            />
+            <label for="pocoFrec">Poco frecuente</label>
+          </div>
+        </div>
+        <a href="index.html">Iniciar</a>
+        <button type="submit" class="btn-submit">Realizar registro</button>
+      </form>
+    </section>
+
+    <script src="app.js"></script>
+  </body>
+</html>

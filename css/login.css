@@ -1,0 +1,122 @@
+/* =========================================
+   LOGIN.CSS - MÓDULO DE AUTENTICACIÓN
+   ========================================= */
+
+#flip-toggle { display: none; }
+
+.mainContainer {
+    perspective: 1000px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    padding: 40px 20px;
+    min-height: calc(100vh - 80px);
+}
+
+.flip-card {
+    width: 100%;
+    max-width: 450px;
+    position: relative;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+    display: grid;
+}
+
+#flip-toggle:checked + .mainContainer .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+/* Contenedores de las caras (Front/Back) */
+.flip-front, .flip-back {
+    grid-area: 1 / 1 / 2 / 2;
+    width: 100%;
+    backface-visibility: hidden;
+    background-color: rgba(103, 103, 103, 0.15); 
+    backdrop-filter: blur(15px);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    height: max-content; 
+}
+
+.flip-front { z-index: 2; }
+.flip-back { transform: rotateY(180deg); }
+
+/* Control de visibilidad para evitar clics en la cara oculta */
+#flip-toggle:not(:checked) + .mainContainer .flip-back { visibility: hidden; }
+#flip-toggle:checked + .mainContainer .flip-front { visibility: hidden; }
+
+/* Títulos */
+.flip-front h2, .flip-back h2 {
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Grupos y Labels */
+.form-group { margin-bottom: 1.2rem; text-align: left; }
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Inputs y Selects */
+input[type="text"], input[type="password"], input[type="email"], input[type="tel"], select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background-color: #e8f0fe !important;
+    color: #1a1a1a;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* Botón Submit */
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background-color: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+/* Texto de cambio (Login/Registro) */
+.switch-text {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.switch-text label {
+    color: #3b82f6;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: underline;
+}

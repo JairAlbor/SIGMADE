@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nuevo material</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <section class="form-container">
+      <h2>Registrar Nuevo Articulo</h2>
+      <form id="formProyecto">
+        <div class="form-group">
+          <label for="nombre">Nombre del articulo</label>
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            placeholder="Ej: Balon de basquet"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="estatus">Disciplina a la que pertenece</label>
+          <select id="estatus" name="estatus" required>
+            <option value="">Selecciona una opción</option>
+            <option value="Activo">Basquet</option>
+            <option value="Sancionado">Futbol</option>
+            <option value="Graduado">Ajedrez</option>
+            <option value="Inactivo">Boley bol</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="estatus">Estado del articulo</label>
+          <select id="estatus" name="estatus" required>
+            <option value="">Selecciona una opción</option>
+            <option value="Activo">Bueno</option>
+            <option value="Sancionado">Nuevo</option>
+            <option value="Graduado">Regular</option>
+            <option value="Inactivo">Dañado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Disponibilidad</label>
+          <div class="radio-group">
+            <input
+              type="radio"
+              id="Continua"
+              name="estado"
+              value="Continua"
+              checked
+            />
+            <label for="Continua">Si</label>
+            <input type="radio" id="pocoFrec" name="estado" value="pocoFrec" />
+            <label for="pocoFrec">No</label>
+          </div>
+        </div>
+        <div class="form-group">
+         
+          <div class="form-group">
+            <label for="imagen">Selecciona una imagen:</label>
+            <input
+              type="file"
+              name="imagen"
+              id="imagen"
+              accept="image/*"
+              required
+            />
+            <button type="submit" class="btn-submit">Subir Imagen</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </body>
+</html>

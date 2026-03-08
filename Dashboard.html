@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/nav-bar.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    
+ <nav class="navbar">
+  <div class="logo">SIGMADE</div>
+
+  <ul class="nav-menu">
+    <li class="nav-item active">Inicio</li>
+    <li class="nav-item" onclick="window.location.href='catalogo.html'">Catalogo</li>
+    <li class="nav-item" onclick="window.location.href='profile.html'">Perfil</li>
+  </ul>
+
+  <div class="top-bar-user">
+    <div class="notification-wrapper">
+      <i data-lucide="bell" class="icon-bell"></i>
+      <span class="notification-dot"></span>
+    </div>
+
+    <div class="user-pill">
+      <div class="user-avatar">
+        <i data-lucide="user" class="icon-user"></i>
+      </div>
+      <span id="userName" class="user-name">Hola, Jair</span>
+    </div>
+  </div>
+</nav>
+
+   <section class="form-container">
+
+    <div class="dashboard-container">
+      <h2 class="dashboard-title">Dashboard</h2>
+
+      <div class="dashboard-grid">
+        <article class="adeudos-card">
+          <i data-lucide="check-circle" class="check-icon"></i>
+          <div class="adeudos-content">
+            <h3 class="adeudos-title">Sin adeudos pendientes</h3>
+            <p class="adeudos-subtext">Tu cuenta se encuentra al día.</p>
+          </div>
+        </article>
+
+      <div class="cards-grid">
+  
+  <button class="dashboard-card" onclick="alert('Abrir modal: Nuevo Préstamo')">
+    <div class="card-icon">
+      <i data-lucide="hand-coins" class="icon-svg"></i>
+    </div>
+    <h3 class="card-title">Nuevo Préstamo</h3>
+  </button>
+
+  <button class="dashboard-card" onclick="alert('Abrir modal: Reservar Cancha')">
+    <div class="card-icon">
+      <i data-lucide="layout-grid" class="icon-svg"></i>
+    </div>
+    <h3 class="card-title">Reservar Cancha</h3>
+  </button>
+
+  <button class="dashboard-card" onclick="alert('Abrir modal: Mis Eventos')">
+    <div class="card-icon">
+      <i data-lucide="calendar-days" class="icon-svg"></i>
+    </div>
+    <h3 class="card-title">Mis Eventos</h3>
+  </button>
+
+  <button class="dashboard-card" onclick="alert('Abrir modal: Historial')">
+    <div class="card-icon">
+      <i data-lucide="history" class="icon-svg"></i>
+    </div>
+    <h3 class="card-title">Historial</h3>
+  </button>
+
+</div>
+
+    <!-- Script para manejar la navegación activa (opcional) -->
+    <script>
+      // Pequeño script para cambiar la clase active al hacer clic en los items del menú
+      document.querySelectorAll(".nav-item").forEach((item) => {
+        item.addEventListener("click", function () {
+          document.querySelectorAll(".nav-item").forEach((navItem) => {
+            navItem.classList.remove("active");
+          });
+          this.classList.add("active");
+        });
+      });
+    </script>
+    <script>
+  lucide.createIcons();
+</script>
+</section>
+  </body>
+</html>

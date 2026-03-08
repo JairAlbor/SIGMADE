@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGMADE - Acceso y Registro</title>
+    <link rel="stylesheet" href="stylennn.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">SIGMADE</div>
+        <div class="imagenLogo">
+            <img src="uuutm.png" alt="Logo UTM" width="180px" height="57px">
+        </div>
+    </nav>
+
+    <input type="checkbox" id="flip-toggle">
+
+    <main class="mainContainer">
+        <div class="flip-card">
+            <div class="flip-card-inner">
+                
+                <section class="flip-front">
+                    <h2>Bienvenido</h2>
+                    <form id="formLogin">
+                        <div class="form-group">
+                            <label for="login-email">Ingresa tu correo</label>
+                            <input type="email" id="login-email" name="email" placeholder="ejemplo@correo.com" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="login-password">Contraseña</label>
+                            <input type="password" id="login-password" name="password" placeholder="Tu contraseña" required />
+                        </div>
+                        
+                        <button type="submit" class="btn-submit" onclick="window.location.href='Dashboard.html'">Iniciar Sesión</button>
+                    </form>
+                    <div class="switch-text">
+                        ¿Aún no te registras? <label for="flip-toggle">Regístrate aquí</label>
+                    </div>
+                </section>
+
+                <section class="flip-back">
+                    <h2>Registrar Nuevo Usuario</h2>
+                    <form id="formUsuarios">
+                        <div class="scroll-form">
+                        
+                             <div class="form-group">
+                                    <label for="rol">Tipo de usuario:</label>
+                                    <select id="rol" name="rol" required>
+                                        <option value="">Selecciona</option>
+                                        <option value="Alumno">Alumno</option>
+                                        <option value="Docente">Entrenador</option>
+                                        <option value="Admin">Administrador</option>
+                                        <option value="Operador">Operador</option>
+                                    </select>
+                                </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="nombre">Nombre(s)</label>
+                                    <input type="text" id="nombre" name="nombre" placeholder="Nombres" required />
+                                </div>
+                                <div class="form-group">
+                                    <label for="apellidos">Apellidos</label>
+                                    <input type="text" id="apellidos" name="apellidos" placeholder="Apellidos" required />
+                                </div>
+                            </div>
+
+                             <div class="form-group">
+                                <label for="iden">Id</label>
+                                <input type="text" id="iden" name="iden" placeholder="Matricula/número de trabajador" required />
+                            </div>
+
+                             <div class="form-group">
+                                <label for="tel">Número telefónico</label>
+                                <input type="tel" id="tel" name="tel" placeholder="10 dígitos" required />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="correo">Correo electrónico</label>
+                                <input type="email" id="correo" name="email" placeholder="correo@utm.mx" required />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="passwordUs">Contraseña</label>
+                                <input type="password" id="passwordUs" name="password" placeholder="Crea una contraseña" required />
+                            </div>
+                           
+                        </div>
+
+                        <button type="submit" class="btn-submit">Realizar registro</button>
+                    </form>
+                    <div class="switch-text">
+                        ¿Ya tienes cuenta? <label for="flip-toggle">Inicia sesión</label>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
