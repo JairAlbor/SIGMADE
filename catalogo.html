@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -11,6 +11,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+       <script src="https://unpkg.com/lucide@latest"></script>
   </head>
   <body>
     <nav class="navbar">
@@ -44,48 +45,58 @@
       </div>
     </nav>
     <div class="form-container">
-    <div class="header-catalogo">
-      <h1>Catálogo de Material</h1>
-      <button id="btn-abrir-formulario" class="btn-principal">
-        + Agregar Material
-      </button>
-    </div>
+  <div class="header-catalogo">
+    <h1>Catálogo de Material</h1>
+    <button id="btn-abrir-formulario" class="btn-principal">
+      + Agregar Material
+    </button>
+  </div>
 
-    <div id="contenedor-formulario" class="form-card hidden">
-      <h3>Nuevo Material</h3>
-      <div class="form-grid">
-        <input type="text" placeholder="Nombre del artículo" />
+  <div id="contenedor-formulario" class="form-card hidden">
+    <h3>Nuevo Material</h3>
+    <div class="form-grid">
+      <form id="formArticulo">
+        <input type="text" name="nombreArticulo" id="nombreArticulo" placeholder="Nombre del artículo" />
+        
         <select id="disciplina" name="disciplina">
-          <option>Seleccionar disciplina</option>
-          <option value="Futbol">Balones</option>
-          <option value="basquelbol">basqutkbol</option>
+          <option value="">Seleccionar disciplina</option>
+          <option value="Futbol">Fútbol</option>
+          <option value="basquetbol">Básquetbol</option>
           <option value="ajedrez">Ajedrez</option>
           <option value="escolta">Escolta</option>
         </select>
+        
         <select name="estado" id="estado">
-          <option>Seleccionar estado</option>
+          <option value="">Seleccionar estado</option>
           <option value="Nuevo">Nuevo</option>
           <option value="Seminuevo">Seminuevo</option>
           <option value="Desgastado">Desgastado</option>
           <option value="Muy-desgastado">Muy Desgastado</option>
           <option value="Roto">Roto</option>
         </select>
+        
         <select name="disponible" id="disponible">
-          <option>¿Disponible?</option>
+          <option value="">¿Disponible?</option>
           <option value="Si">Sí</option>
           <option value="No">No</option>
         </select>
-        <label for="imagen">Ingresa una imagen del articulo</label>
+        
+        <label for="imagen">Ingresa una imagen del artículo</label>
         <input type="file" id="imagen" name="imagen" accept="image/*" />
-      </div>
-      <div class="form-actions">
-        <button id="btn-cancelar" class="btn-secundario">Cancelar</button>
-        <button id="btn-exito" class="btn-exito">Guardar Material</button>
-      </div>
+      
     </div>
+    
+    <div class="form-actions">
+      <button id="btn-cancelar" class="btn-secundario">Cancelar</button>
+      <button type="submit" id="btn-exito" class="btn-exito">Guardar Material</button>
+    </div>
+  </form>
+  </div>
+</div>
 
     <div class="tabla-container"></div>
     </div>
     <script src="modal-js/modal-catalogo.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>

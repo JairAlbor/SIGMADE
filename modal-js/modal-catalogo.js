@@ -14,5 +14,5 @@ btnCancelar.addEventListener('click', () => {
 
 btnGuardar.addEventListener('click', () => {
 contenedorForm.classList.add('hidden');
-alert('Material guardado con éxito');
-});
+// Aquí puedes agregar la lógica para guardar el material, por ejemplo, enviar los datos a tu servidor o actualizar la tabla
+    });

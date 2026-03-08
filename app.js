@@ -1,6 +1,11 @@
-document.getElementById('formUsuarios').addEventListener('submit', async (e) => {
-    e.preventDefault();
+//formArticulo.addEventListener("submit", guardarArticulo)
 
+const apiLogin ='http://localhost:3001/api/login';
+const apiTest = 'http://localhost:3001/api/test';
+
+
+
+async function guardarUsuario() {
     try {
         // 1. Capturamos los valores de los Selects y Radios
         const rolSeleccionado = document.getElementById('rol').value;
@@ -23,7 +28,7 @@ document.getElementById('formUsuarios').addEventListener('submit', async (e) => 
         }
 
         // 4. Envío al servidor
-        const response = await fetch('/api/usuario', { 
+        const response = await fetch('http://localhost:3001/api/usuario', { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -44,7 +49,7 @@ document.getElementById('formUsuarios').addEventListener('submit', async (e) => 
         console.error('Error:', error);
         alert('Error al conectar con el servidor');
     }
-});
+};
 
 /*--------------- codigo para hacer login------------------*/
 
@@ -54,7 +59,7 @@ async function loginUsuario() {
     const password = document.getElementById('loginPassword').value;
 
     try {
-        const response = await fetch('/api/usuario/login', {
+        const response = await fetch(apiLogin, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ credencial, password })
@@ -63,13 +68,52 @@ async function loginUsuario() {
         const data = await response.json();
 
         if (data.success) {
+          localStorage.setItem('nombreUsuario', data.user.nombre);
             // Guardar info básica si es necesario y redirigir
-            console.log('Usuario logueado:', data.user);
+          console.log('Usuario logueado:', data.user.nombre);
+            if (data.user.rol === 'Admin') {
+                window.location.href = './administracion.html'; 
+            } else {
             window.location.href = './Dashboard.html'; 
+          
+            }
+              document.getElementById('userName').textContent = `Hola, ${nombre}`;
         } else {
             console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
         }
     } catch (error) {
         console.error('Error de conexión:', error);
     }
-}
+};
+
+async function guardarArticulo(event) {
+    event.preventDefault();
+    const nombre = document.getElementById('nombreArticulo').value;
+    const disciplina = document.getElementById('disciplina').value;
+    const estado = document.getElementById('estado').value;
+    const disponible = document.getElementById('disponible').value;
+
+    fetch('/api/articulo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, disciplina, estado, disponible })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Artículo registrado correctamente');
+            document.getElementById('formArticulo').reset();
+        } else {
+            alert('Error al registrar el artículo: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error de conexión:', error);
+        alert('Error al conectar con el servidor');
+    });
+};
+
+
+
+
+// Función para guardar proyecto

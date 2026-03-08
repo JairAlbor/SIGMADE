@@ -1,0 +1,102 @@
+
+.admin-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+/* Contenedor principal de las tarjetas */
+.main-grid {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+    padding: 20px 0;
+}
+
+/* Tarjeta Principal (Azul/Verde) */
+.card-featured {
+    flex: 1.2; /* Un poco más ancha que las otras */
+    background-color: #007bff; /* Cambia al color exacto que prefieras */
+    color: white;
+    border-radius: 20px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Rejilla de los botones pequeños (derecha) */
+.secondary-grid {
+    flex: 1.8;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+/* Estilo de los Botones Blancos (Estilo Dashboard) */
+.card-small {
+    background-color: white;
+    border: none;
+    border-radius: 20px; /* Bordes muy redondeados como en la imagen */
+    padding: 25px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra suave */
+}
+
+/* Efecto Hover para los botones */
+.card-small:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    background-color: #fcfcfc;
+}
+
+/* Iconos dentro de los botones */
+.card-small i {
+    font-size: 1.8rem;
+    color: #444; /* Color oscuro grisáceo */
+    margin-bottom: 12px;
+}
+
+/* Títulos dentro de los botones */
+.card-small h3 {
+    font-size: 1rem;
+    color: #333;
+    margin: 5px 0;
+    font-weight: 600;
+}
+
+/* Los números (conteo) debajo del texto */
+.card-small .count {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #a04444; /* El tono rojizo/café de tu segunda imagen */
+    margin: 0;
+}
+
+/* Ajustes para la tarjeta azul (detalles internos) */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.big-number {
+    font-size: 4rem;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.status-item {
+    background: rgba(255, 255, 255, 0.15); /* Fondo semitransparente */
+    padding: 8px 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
