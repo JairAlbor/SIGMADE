@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const connection = require('./db'); // Esto es connection, no db
 const path = require('path');
+const { create } = require('domain');
 
 const app = express();
 const PORT = 3001;
@@ -35,7 +36,7 @@ app.post('/api/login', (req, res) => {
 
     // Usar connection (no db) con callback
     connection.query(
-        'SELECT identificador, nombre, apellidos, email, password, rol, telefono FROM usuario WHERE email = ? OR identificador = ? LIMIT 1',
+        'SELECT identificador, nombre, apellidos, email, password, rol, telefono,estatus,created_at FROM usuario WHERE email = ? OR identificador = ? LIMIT 1',
         [credencial, credencial],
         (err, rows) => {
             if (err) {
@@ -67,8 +68,10 @@ app.post('/api/login', (req, res) => {
                         email: usuario.email,
                         password: usuario.password,
                         rol: usuario.rol,
-                        telefono: usuario.telefono
-                        
+                        telefono: usuario.telefono,
+                        estatus: usuario.estatus,
+                        create_at: usuario.created_at
+                            
                     }
                 });
             } else {

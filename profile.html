@@ -29,7 +29,7 @@
           <div class="user-avatar">
             <i data-lucide="user" class="icon-user"></i>
           </div>
-          <span id="userName" class="user-name">Hola, Juan</span>
+          <span id="userName" class="user-name"></span>
         </div>
       </div>
     </nav>
@@ -45,8 +45,8 @@
                 <i data-lucide="user"></i>
               </div>
               <div class="profile-header-info">
-                <h2>Juan Pérez</h2>
-                <p>Miembro desde Enero 2024</p>
+                <h2 id="profileName"></h2>
+                <p>Miembro desde: <span id="profileCreateAt"></span></p>
                 <button class="btn-edit">Editar Perfil</button>
               </div>
             </div>
@@ -56,15 +56,15 @@
             <div class="profile-details">
               <div class="detail-item">
                 <i data-lucide="mail"></i>
-                <span>juan.perez@example.com</span>
+                <span id="profileEmail"></span>
               </div>
               <div class="detail-item">
                 <i data-lucide="phone"></i>
-                <span>+52 123 456 7890</span>
+                <span id="profileTelefono"></span>
               </div>
               <div class="detail-item">
                 <i data-lucide="map-pin"></i>
-                <span>Ciudad de México, México</span>
+                <span>Ciudad de Morelia, México</span>
               </div>
               <div class="detail-item">
                 <i data-lucide="calendar"></i>
@@ -76,38 +76,36 @@
           <aside class="profile-stats">
             <div class="stat-card">
               <div class="stat-header">
-                <i data-lucide="credit-card"></i>
-                <span>Préstamos activos</span>
+                <i data-lucide="briefcase"></i>
+                <span id="profileRol"></span>
               </div>
-              <span class="stat-value">0</span>
             </div>
 
             <div class="stat-card">
               <div class="stat-header">
                 <i data-lucide="calendar-check"></i>
-                <span>Eventos asistidos</span>
+                <span>Frecuencia de prestamos</span>
               </div>
               <span class="stat-value">12</span>
             </div>
 
             <div class="stat-card">
               <div class="stat-header">
-                <i data-lucide="medal"></i>
-                <span>Puntos acumulados</span>
+                <i data-lucide="user-check"></i>
+                <p>Estado del usuario</p>
               </div>
-              <span class="stat-value">350</span>
+              <span id="profileEstatus"></span>
             </div>
           </aside>
         </div>
 
         <section class="activity-section">
-          <h3>Actividad Reciente</h3>
+          <h3>Historial de prestamos</h3>
           <div class="activity-placeholder"></div>
         </section>
       </main>
     </section>
-    <script>
-      lucide.createIcons();
-    </script>
+    <script>lucide.createIcons();</script>
+    <script src="profile.js"></script>
   </body>
 </html>

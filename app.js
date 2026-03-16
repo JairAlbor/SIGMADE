@@ -68,14 +68,25 @@ async function loginUsuario() {
         const data = await response.json();
 
         if (data.success) {
-          localStorage.setItem('nombreUsuario', data.user.nombre);
+            const usuarioInfo={
+                nombre: data.user.nombre,
+                apellidos: data.user.apellidos,
+                email: data.user.email,
+                telefono: data.user.telefono,
+                rol: data.user.rol,
+                estatus: data.user.estatus,
+                create_at: data.user.create_at
+            }
+
+            // Guardar la información del usuario en localStorage para covertilo en texto JSON
+            localStorage.setItem('usuarioInfo', JSON.stringify(usuarioInfo));
+
             // Guardar info básica si es necesario y redirigir
           console.log('Usuario logueado:', data.user.nombre);
             if (data.user.rol === 'Admin') {
                 window.location.href = './administracion.html'; 
             } else {
-            window.location.href = './Dashboard.html'; 
-          
+                window.location.href = './Dashboard.html'; 
             }
               document.getElementById('userName').textContent = `Hola, ${nombre}`;
         } else {
