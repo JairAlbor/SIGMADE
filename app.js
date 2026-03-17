@@ -5,7 +5,9 @@ const apiTest = 'http://localhost:3001/api/test';
 
 
 
-async function guardarUsuario() {
+async function guardarUsuario(event) {
+    if (event) event.preventDefault(); // Evitar que el formulario recargue la página
+
     try {
         // 1. Capturamos los valores de los Selects y Radios
         const rolSeleccionado = document.getElementById('rol').value;
@@ -40,7 +42,7 @@ async function guardarUsuario() {
 
         if (resultado.success) {
             alert('✅ Usuario registrado con éxito');
-            e.target.reset(); // Limpia el formulario
+            if (event && event.target) event.target.closest('form').reset(); // Limpia el formulario de forma segura
         } else {
             alert('❌ Error: ' + resultado.message);
         }
@@ -54,7 +56,9 @@ async function guardarUsuario() {
 /*--------------- codigo para hacer login------------------*/
 
 // Función para disparar desde el botón "Entrar"
-async function loginUsuario() {
+async function loginUsuario(event) {
+    if (event) event.preventDefault(); // Evitar que el formulario recargue la página
+
     const credencial = document.getElementById('loginMatri').value; // Puede ser email o ID
     const password = document.getElementById('loginPassword').value;
 
@@ -72,13 +76,14 @@ async function loginUsuario() {
             // Guardar info básica si es necesario y redirigir
           console.log('Usuario logueado:', data.user.nombre);
             if (data.user.rol === 'Admin') {
-                window.location.href = './administracion.html'; 
+                window.location.href = 'administracion.html'; 
             } else {
-            window.location.href = './Dashboard.html'; 
-          
+                window.location.href = 'Dashboard.html'; 
             }
-              document.getElementById('userName').textContent = `Hola, ${nombre}`;
+            // Mover esto aquí causa error porque 'nombre' no está definido, usar data.user.nombre
+            // document.getElementById('userName').textContent = `Hola, ${data.user.nombre}`;
         } else {
+            alert(data.message); // Avisar al usuario si falla
             console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
         }
     } catch (error) {
