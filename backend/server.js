@@ -149,6 +149,30 @@ app.post('/api/articulo', (req, res) => {
     });
 });
 
+app.get('/api/consultar/articulo', (req, res) => {
+    console.log('📦 GET /api/consultar/articulo');
+
+    const query = 'SELECT id, nombre, disciplina_id, tipoMaterial, estado, disponible FROM material';
+
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('❌ Error:', err);
+            return res.status(500).json({ 
+                success: false,
+                error: 'Error al consultar artículos' 
+            });
+        }
+
+        res.json({
+            success: true,
+            articulos: results
+        });
+    });
+});
+
+       
+
+ 
 
 // ============ ARCHIVOS ESTÁTICOS ============
 // (DESPUÉS de todas las rutas API)
@@ -167,5 +191,6 @@ app.listen(PORT, () => {
     console.log('   GET  /api/test');
     console.log('   POST /api/login');
     console.log('   POST /api/usuario');
+    console.log('   GET  /api/consultar/articulo');
     console.log('   POST /api/articulo\n');
 });     

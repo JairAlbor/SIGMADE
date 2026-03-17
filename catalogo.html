@@ -48,9 +48,7 @@
     <div class="form-container">
   <div class="header-catalogo">
     <h1>Catálogo de Material</h1>
-    <button id="btn-abrir-formulario" class="btn-principal">
-      + Agregar Material
-    </button>
+   
   </div>
 
   <div id="contenedor-formulario" class="form-card hidden">
@@ -103,7 +101,9 @@
             <input type="text" placeholder="Buscar material..." id="searchMaterial">
         </div>
     </div>
-
+ <button id="btn-abrir-formulario" class="btn-principal">
+      + Agregar Material
+    </button>
     <div class="stats-cards">
         <div class="stat-card total">
             <span class="stat-number">12</span>
@@ -118,48 +118,24 @@
   
 
     <div class="table-responsive">
-        <table class="material-table">
-            <thead>
-                <tr>
-                    <th>Artículo</th>
-                    <th>Categoría</th>
-                    <th>Cantidad Total</th>
-                    <th>Disponibles</th>
-                    <th>En Préstamo</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-cuerpo">
-                <tr>
-                    <td><strong>Matemáticas Avanzadas</strong></td>
-                    <td><span class="badge badge-libro">Libro</span></td>
-                    <td>5</td>
-                    <td class="text-green">3</td>
-                    <td>2</td>
-                    <td class="actions">
-                        <button class="btn-icon edit"><i class="fa-regular fa-pen-to-square"></i></button>
-                        <button class="btn-icon delete"><i class="fa-regular fa-trash-can"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Balón de Fútbol</strong></td>
-                    <td><span class="badge badge-deporte">Deporte</span></td>
-                    <td>10</td>
-                    <td class="text-green">7</td>
-                    <td>3</td>
-                    <td class="actions">
-                        <button class="btn-icon edit"><i class="fa-regular fa-pen-to-square"></i></button>
-                        <button class="btn-icon delete"><i class="fa-regular fa-trash-can"></i></button>
-                    </td>
-                </tr>
+    <table class="material-table">
+        <thead>
+            <tr>
+                <th>Artículo</th>
+                <th>Categoría</th>
+                <th>Tipo Material</th>
+                <th>Estado</th>
+                <th>Disponible</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-cuerpo">
             </tbody>
-        </table>
-    </div>
+    </table>
+</div>
 </div>
 </div>
 
-    <div class="tabla-container"></div>
-    </div>
 
     <script>
       lucide.createIcons();
