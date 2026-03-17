@@ -11,7 +11,8 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-       <script src="https://unpkg.com/lucide@latest"></script>
+           <script src="https://unpkg.com/lucide@latest"></script>
+
   </head>
   <body>
     <nav class="navbar">
@@ -40,7 +41,7 @@
           <div class="user-avatar">
             <i data-lucide="user" class="icon-user"></i>
           </div>
-          <span id="userName" class="user-name">Hola, Jair</span>
+          <span id="userName" class="user-name"> </span>
         </div>
       </div>
     </nav>
@@ -60,10 +61,10 @@
         
         <select id="disciplina" name="disciplina">
           <option value="">Seleccionar disciplina</option>
-          <option value="Futbol">Fútbol</option>
-          <option value="basquetbol">Básquetbol</option>
-          <option value="ajedrez">Ajedrez</option>
-          <option value="escolta">Escolta</option>
+          <option value="1">Fútbol</option>
+          <option value="2">Básquetbol</option>
+          <option value="3">Ajedrez</option>
+          <option value="4">Escolta</option>
         </select>
         
         <select name="estado" id="estado">
@@ -88,14 +89,81 @@
     
     <div class="form-actions">
       <button id="btn-cancelar" class="btn-secundario">Cancelar</button>
-      <button type="submit" id="btn-exito" class="btn-exito">Guardar Material</button>
+      <button  onclick="guardarArticulo()" type="submit" id="btn-exito" class="btn-exito">Guardar Material</button>
     </div>
   </form>
+  
   </div>
+  <div class="tabla-container">
+    
+    <div class="controls-container">
+  <div class="search-bar-container">
+        <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Buscar material..." id="searchMaterial">
+        </div>
+    </div>
+
+    <div class="stats-cards">
+        <div class="stat-card total">
+            <span class="stat-number">12</span>
+            <span class="stat-label">Total artículos</span>
+        </div>
+        <div class="stat-card available">
+            <span class="stat-number">71</span>
+            <span class="stat-label">Disponibles</span>
+        </div>
+    </div>
+    </div>
+  
+
+    <div class="table-responsive">
+        <table class="material-table">
+            <thead>
+                <tr>
+                    <th>Artículo</th>
+                    <th>Categoría</th>
+                    <th>Cantidad Total</th>
+                    <th>Disponibles</th>
+                    <th>En Préstamo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-cuerpo">
+                <tr>
+                    <td><strong>Matemáticas Avanzadas</strong></td>
+                    <td><span class="badge badge-libro">Libro</span></td>
+                    <td>5</td>
+                    <td class="text-green">3</td>
+                    <td>2</td>
+                    <td class="actions">
+                        <button class="btn-icon edit"><i class="fa-regular fa-pen-to-square"></i></button>
+                        <button class="btn-icon delete"><i class="fa-regular fa-trash-can"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Balón de Fútbol</strong></td>
+                    <td><span class="badge badge-deporte">Deporte</span></td>
+                    <td>10</td>
+                    <td class="text-green">7</td>
+                    <td>3</td>
+                    <td class="actions">
+                        <button class="btn-icon edit"><i class="fa-regular fa-pen-to-square"></i></button>
+                        <button class="btn-icon delete"><i class="fa-regular fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 </div>
 
     <div class="tabla-container"></div>
     </div>
+
+    <script>
+      lucide.createIcons();
+    </script>
     <script src="modal-js/modal-catalogo.js"></script>
     <script src="app.js"></script>
   </body>

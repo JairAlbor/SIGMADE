@@ -86,8 +86,8 @@ async function loginUsuario() {
     }
 };
 
-async function guardarArticulo(event) {
-    event.preventDefault();
+async function guardarArticulo() {
+    
     const nombre = document.getElementById('nombreArticulo').value;
     const disciplina = document.getElementById('disciplina').value;
     const estado = document.getElementById('estado').value;

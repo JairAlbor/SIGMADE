@@ -130,7 +130,7 @@ app.post('/api/articulo', (req, res) => {
         });
     }
 
-    const query = 'INSERT INTO material (nombre, disciplina, estado, disponible) VALUES (?, ?, ?, ?)';
+    const query = 'INSERT INTO material (nombre, disciplina_id, estado, disponible) VALUES (?, ?, ?, ?)';
     
     connection.query(query, [nombre, disciplina, estado, disponible], (err, result) => {
         if (err) {
@@ -148,6 +148,7 @@ app.post('/api/articulo', (req, res) => {
         });
     });
 });
+
 
 // ============ ARCHIVOS ESTÁTICOS ============
 // (DESPUÉS de todas las rutas API)
@@ -167,4 +168,4 @@ app.listen(PORT, () => {
     console.log('   POST /api/login');
     console.log('   POST /api/usuario');
     console.log('   POST /api/articulo\n');
-});
+});     
