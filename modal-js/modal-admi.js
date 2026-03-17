@@ -1,3 +1,5 @@
+/**codigo para conseguir el nombre del usuario */
+
 document.addEventListener('DOMContentLoaded', () => {
     // RECUPERAR el nombre
     const nombreGuardado = localStorage.getItem('nombreUsuario');
@@ -17,3 +19,5 @@ document.addEventListener('DOMContentLoaded', () => {
       ///  window.location.href = 'login.html'; 
     }
 });
+/**********************************************/
+
