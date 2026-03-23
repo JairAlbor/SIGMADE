@@ -20,6 +20,7 @@ app.get('/api/test', (req, res) => {
     res.json({ message: 'Servidor funcionando' });
 });
 
+
 // LOGIN de usuario
 app.post('/api/login', (req, res) => {
     console.log('🔐 POST /api/login - Body:', req.body);
@@ -117,7 +118,7 @@ app.post('/api/usuario', (req, res) => {
     );
 });
 
-// ARTÍCULO
+// insertar un nuevo ARTÍCULO
 app.post('/api/articulo', (req, res) => {
     console.log('📦 POST /api/articulo - Body:', req.body);
     
@@ -149,10 +150,73 @@ app.post('/api/articulo', (req, res) => {
     });
 });
 
+//endpoint para elminar un artículo
+app.delete('/api/articulo/:id', (req, res) => {
+    console.log('📦 DELETE /api/articulo/:id - Params:', req.params);
+    const { id } = req.params;
+
+    const query = 'DELETE FROM material WHERE id = ?';
+
+    connection.query(query, [id], (err, result) => {
+        if (err) {
+            console.error('eli -- Error:', err);
+            return res.status(500).json({ 
+                success: false,
+                error: 'Error al eliminar artículo' 
+            });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Artículo no encontrado' 
+            });
+        }
+
+        res.json({
+            success: true,
+            mensaje: 'Artículo eliminado'
+        });
+    });
+});
+
+
+//endpoint para editar un artículo
+app.put('/api/articulo/:id', (req, res) => {
+    console.log('📦 PUT /api/articulo/:id - Params:', req.params, 'Body:', req.body);
+    const { id } = req.params;
+    const { nombre, disciplina, estado, disponible } = req.body;    
+
+    const query = 'UPDATE material SET nombre = ?, disciplina_id = ?, estado = ?, disponible = ? WHERE id = ?';
+
+    connection.query(query, [nombre, disciplina, estado, disponible, id], (err, result) => {
+        if (err) {
+            console.error('edi -- Error:', err);
+            return res.status(500).json({ 
+                success: false,
+                error: 'Error al editar artículo' 
+            });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Artículo no encontrado' 
+            });
+        }
+
+        res.json({
+            success: true,
+            mensaje: 'Artículo editado'
+        });
+    });
+});
+
+//consultar todos los artículos
 app.get('/api/consultar/articulo', (req, res) => {
     console.log('📦 GET /api/consultar/articulo');
 
-    const query = 'SELECT id, nombre, disciplina_id, tipoMaterial, estado, disponible FROM material';
+    const query = 'SELECT m.id, m.nombre AS nombre_material, d.nombre AS nombre_disciplina, m.tipoMaterial, m.estado, m.disponible FROM material m JOIN disciplina d ON m.disciplina_id = d.id';
 
     connection.query(query, (err, results) => {
         if (err) {
@@ -170,8 +234,36 @@ app.get('/api/consultar/articulo', (req, res) => {
     });
 });
 
-       
+// Endpoint único para estadísticas
+app.get('/api/totalArt', (req, res) => {
+    console.log('📦 GET /api/totalArt');
 
+    const query = `
+        SELECT 
+            COUNT(*) AS total, 
+            SUM(CASE WHEN disponible = 1 THEN 1 ELSE 0 END) AS disponibles 
+        FROM material
+    `;
+
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('❌ Error:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Error al consultar estadísticas'
+            });
+        }
+
+        const total = results[0].total || 0;
+        const disponibles = results[0].disponibles || 0;
+        
+        res.json({
+            success: true,
+            total: total,
+            disponibles: disponibles
+        });
+    });
+});
  
 
 // ============ ARCHIVOS ESTÁTICOS ============
@@ -194,3 +286,4 @@ app.listen(PORT, () => {
     console.log('   GET  /api/consultar/articulo');
     console.log('   POST /api/articulo\n');
 });     
+
