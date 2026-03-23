@@ -15,4 +15,10 @@ document.addEventListener('DOMContentLoaded', () =>{
     document.getElementById('profileEstatus').textContent = usuario.estatus;
     document.getElementById('profileCreateAt').textContent = new Date(usuario.create_at).toLocaleDateString();
 
+    //Mostrar frecuencia de uso
+    // Convertir el valor booleano de frecuencia a un texto legible
+    const frecuenciaMaterial = usuario.frecuencia ? "Es Frecuente" : 'No es Frecuente';
+    // Mostrar la frecuencia en el elemento correspondiente
+    document.getElementById('profileFrecuencia').textContent = frecuenciaMaterial;
+
 })

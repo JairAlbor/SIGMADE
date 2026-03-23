@@ -2,14 +2,17 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // RECUPERAR el nombre
-    const nombreGuardado = localStorage.getItem('nombreUsuario');
+    const nombreGuardado = localStorage.getItem('usuarioInfo');
+
+    //se convierte el string JSON a un objeto JavaScript para acceder a sus propiedades
+    const usuario = JSON.parse(nombreGuardado);
 
     // Verificar si existe (por seguridad)
-    if (nombreGuardado) {
+    if (usuario && usuario.nombre) {
         // Ejemplo: Ponerlo en un elemento con id="bienvenida"
         const saludoElemento = document.getElementById('userName');
         if (saludoElemento) {
-            saludoElemento.textContent = `Bienvenido, ${nombreGuardado}`;
+            saludoElemento.textContent = `Bienvenido, ${usuario.nombre}`;
         }
         
         // Si quieres usarlo dentro de un modal específico:
