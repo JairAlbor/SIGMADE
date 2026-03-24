@@ -76,10 +76,10 @@
             <p class="count">8</p>
           </button>
 
-          <button class="card-small">
+          <button class="card-small" onclick="consultarUsuarios()">
             <i class="fa-solid fa-users"></i>
             <h3>Usuarios</h3>
-            <p class="count">156</p>
+            <p class="count" id="totalUser"></p>
           </button>
 
           <button class="card-small">
@@ -167,9 +167,75 @@
         </footer>
       </div>
     </div>
+
+
+<!-- Modal para gestión de usuarios -->
+
+<div id="modalUsuarios" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Usuarios Registrados</h2>
+        </div>
+        
+        <div class="modal-body">
+            <div class="search-bar-container">
+                <input type="text" placeholder="Buscar por nombre o email...">
+            </div>
+
+            <div class="stats-summary-grid">
+                <div class="stat-summary-card active">
+                    
+                    <span class="label" >Activos</span>
+                    <span class="number" id="activeUsersModal">5</span>
+                </div>
+                <div class="stat-summary-card inactive">
+                    
+                    <span class="label">Inactivos</span>
+                    <span class="number" id="inactiveUsersModal"></span>
+                </div>
+                <div class="stat-summary-card total">
+                    
+                    <span class="label">Total</span>
+                    <span class="number" id="totalUsersModal"></span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Número de Teléfono</th>
+                            <th>Fecha de Registro</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaUsuariosBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-guinda" onclick="toggleModal('modalUsuarios')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+    <div class="modal-footer">
+      <button class="btn-close-footer">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+
     <script>
       lucide.createIcons();
     </script>
+    <script src="app3.js"></script>
     <script src="modal-js/modal-admi.js"></script>
     <script src="modal-js/modal-eventos.js"></script>
   </body>

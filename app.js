@@ -7,6 +7,9 @@ const apiTest = "http://localhost:3001/api/total";
 window.addEventListener('DOMContentLoaded', function() {
     cargarArticulos();
     contarTotalMateriales();
+    contarDisponibles();
+    contarTotalUsuarios();
+    
   //  contarDisponibles(); // Llamamos a la función para contar disponibles al cargar la página
     // Puedes agregar todas las que quieras
 });
@@ -97,12 +100,12 @@ async function guardarArticulo() {
   const nombre = document.getElementById("nombreArticulo").value;
   const disciplina = document.getElementById("disciplina").value;
   const estado = document.getElementById("estado").value;
-  const disponible = document.getElementById("disponible").value;
+  const tipoMaterial = document.getElementById("tipoMaterial").value;
 
   fetch("/api/articulo", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nombre, disciplina, estado, disponible }),
+    body: JSON.stringify({ nombre, disciplina, estado, tipoMaterial }),
   })
     .then((response) => response.json())
     .then((data) => {
@@ -197,7 +200,7 @@ function contarDisponibles() {
     return;
   }
 
-  fetch("http://localhost:3001/api/total")
+  fetch("http://localhost:3001/api/totalArt")
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
@@ -243,6 +246,7 @@ function editarMaterial(id) {
         if (data.success) {
           alert("Artículo editado correctamente");
           cargarArticulos(); // Refrescar la lista después de editar
+          contarDisponibles(); // Actualizar disponibles después de editar
         } else {  
           alert("Error al editar el artículo: " + data.error);
         }
