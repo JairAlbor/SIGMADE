@@ -108,51 +108,6 @@ async function loginUsuario() {
     }
 };
 
-async function guardarArticulo(event) {
-    event.preventDefault();
-    const nombre = document.getElementById('nombreArticulo').value;
-    const disciplina = document.getElementById('disciplina').value;
-    const estado = document.getElementById('estado').value;
-    const disponible = document.getElementById('disponible').value;
-
-    fetch('/api/articulo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, disciplina, estado, disponible })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Artículo registrado correctamente');
-            document.getElementById('formArticulo').reset();
-        } else {
-            alert('Error al registrar el artículo: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error de conexión:', error);
-        alert('Error al conectar con el servidor');
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      localStorage.setItem("nombreUsuario", data.user.nombre);
-      // Guardar info básica si es necesario y redirigir
-      console.log("Usuario logueado:", data.user.nombre);
-      if (data.user.rol === "Admin") {
-        window.location.href = "./administracion.html";
-      } else {
-        window.location.href = "./Dashboard.html";
-      }
-      document.getElementById("userName").textContent = `Hola, ${nombre}`;
-    } else {
-      console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
-    }
-  } catch (error) {
-    console.error("Error de conexión:", error);
-  }
-}
 
 async function guardarArticulo() {
   const nombre = document.getElementById("nombreArticulo").value;
