@@ -68,16 +68,16 @@
         <select name="estado" id="estado">
           <option value="">Seleccionar estado</option>
           <option value="Nuevo">Nuevo</option>
-          <option value="Seminuevo">Seminuevo</option>
-          <option value="Desgastado">Desgastado</option>
+          <option value="Bueno">Bueno</option>
+          <option value="Regular">Regular</option>
           <option value="Muy-desgastado">Muy Desgastado</option>
           <option value="Roto">Roto</option>
         </select>
         
-        <select name="disponible" id="disponible">
-          <option value="">¿Disponible?</option>
-          <option value="Si">Sí</option>
-          <option value="No">No</option>
+        <select name="tipoMaterial" id="tipoMaterial">
+          <option value="">Seleccionar tipo de material</option>
+          <option value="Material deportivo">Material deportivo</option>
+          <option value="Cancha">Cancha</option>
         </select>
         
         <label for="imagen">Ingresa una imagen del artículo</label>
@@ -106,12 +106,16 @@
     </button>
     <div class="stats-cards">
         <div class="stat-card total">
-            <span class="stat-number">12</span>
+           
             <span class="stat-label">Total artículos</span>
+             <span class="stat-number" id="articulos"></span>
+            
         </div>
         <div class="stat-card available">
-            <span class="stat-number">71</span>
+            
             <span class="stat-label">Disponibles</span>
+            <span class="stat-number" id="disponibles"></span>
+        
         </div>
     </div>
     </div>

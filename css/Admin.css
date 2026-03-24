@@ -260,3 +260,122 @@
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
 }
+
+/* --- NUEVOS ESTILOS PARA KPI Y TABLA (INTEGRADOS) --- */
+
+/* Contenedor de búsqueda */
+.search-bar-container {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.search-bar-container input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.95rem;
+}
+
+/* Rejilla de indicadores (KPIs) */
+.stats-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.stat-summary-card {
+    padding: 1.5rem;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+/* Variantes de color basadas en tu imagen */
+.stat-summary-card.active { background-color: #f0fff4; border-color: #c6f6d5; color: #2f855a; }
+.stat-summary-card.inactive { background-color: #f7fafc; border-color: #edf2f7; color: #718096; }
+.stat-summary-card.total { background-color: #eff6ff; border-color: #bfdbfe; color: #2563eb; }
+
+.stat-summary-card .number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stat-summary-card .label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+/* Estilos de la Tabla */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 0.95rem;
+}
+
+.custom-table th {
+    background-color: #f9fafb;
+    padding: 1rem;
+    text-align: left;
+    color: #4b5563;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.custom-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #1f2937;
+}
+
+/* Badge de estado dentro de tabla */
+.status-pill {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.status-pill.active { background-color: #dcfce7; color: #15803d; }
+.status-pill.inactive { background-color: #f3f4f6; color: #4b5563; }
+
+.view-profile-link {
+    color: var(--guinda);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.view-profile-link:hover { text-decoration: underline; }
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+.btn-icon.edit { color: #2d3e50; }
+.btn-icon.delete { color: #a04444; }
+
+.btn-icon:hover {
+    opacity: 0.7;
+}
