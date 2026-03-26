@@ -14,17 +14,26 @@
     padding: 20px 0;
 }
 
-/* Tarjeta Principal (Azul/Verde) */
 .card-featured {
     flex: 1.2; /* Un poco más ancha que las otras */
     background-color: #007bff; /* Cambia al color exacto que prefieras */
     color: white;
+    font-family: inherit;
+    border: none;
+    text-align: left;
     border-radius: 20px;
     padding: 30px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.card-featured:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 /* Rejilla de los botones pequeños (derecha) */
