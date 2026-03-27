@@ -9,18 +9,16 @@ const overlay = document.getElementById('eventModalOverlay');
 const eventList = document.getElementById('eventList');
 const addForm = document.getElementById('addEventForm');
 
-// Abrir/Cerrar Modal
-document.getElementById('openModalBtn').addEventListener('click', () => {
+// Abrir modal de Eventos (llamado desde tarjeta "Eventos" en el panel)
+function openEvents() {
     overlay.classList.remove('hidden');
     renderEvents();
-});
+}
 
+// Cerrar modal de Eventos
 function closeModal() {
     overlay.classList.add('hidden');
 }
-
-// Mostrar/Ocultar Formulario
-document.getElementById('toggleFormBtn').addEventListener('click', () => toggleForm());
 
 function toggleForm(show = true) {
     if (show && addForm.classList.contains('hidden')) {
