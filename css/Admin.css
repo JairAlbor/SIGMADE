@@ -388,3 +388,254 @@
 .btn-icon:hover {
     opacity: 0.7;
 }
+
+/* ====================================================
+   ESTILOS PARA MODAL DE PRÉSTAMOS (CRUD)
+   ==================================================== */
+
+/* Modal ancho para préstamos */
+.modal-content-wide {
+    max-width: 1300px;
+}
+
+/* KPI Cards - Variantes de préstamos */
+.stat-summary-card.prestamo-abierto {
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
+}
+
+.stat-summary-card.prestamo-retraso {
+    background-color: #fffbeb;
+    border-color: #fde68a;
+    color: #d97706;
+}
+
+.stat-summary-card.prestamo-cerrado {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #16a34a;
+}
+
+.stat-summary-card i {
+    margin-right: 4px;
+}
+
+/* --- STATUS PILLS (estados de préstamo) --- */
+.prestamo-pill-abierto {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+.prestamo-pill-pendiente {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+.prestamo-pill-retraso {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.prestamo-pill-cerrado {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.prestamo-pill-entregado {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.prestamo-pill-danado {
+    background-color: #fce7f3;
+    color: #be185d;
+}
+
+.prestamo-pill-perdido {
+    background-color: #fecaca;
+    color: #991b1b;
+}
+
+.prestamo-pill-cancelado {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* --- CELDA DE USUARIO EN TABLA --- */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-cell-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3b82f6;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.user-cell-name {
+    display: block;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.9rem;
+}
+
+.user-cell-id {
+    display: block;
+    font-size: 0.78rem;
+    color: #9ca3af;
+}
+
+/* --- TAG DE MATERIAL --- */
+.material-tag {
+    background: #f3f4f6;
+    color: #374151;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* --- FORMULARIO DE NUEVO PRÉSTAMO --- */
+.form-grid-prestamo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-field select,
+.form-field input,
+.form-field textarea {
+    padding: 0.6rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.form-field select:focus,
+.form-field input:focus,
+.form-field textarea:focus {
+    outline: none;
+    border-color: var(--guinda);
+    box-shadow: 0 0 0 3px rgba(109, 45, 59, 0.1);
+}
+
+.form-actions-prestamo {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.btn-cancel {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #f3f4f6;
+}
+
+.btn-save {
+    background: var(--guinda);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-save:hover {
+    background: var(--guinda-hover);
+}
+
+/* Close modal button */
+.close-modal-btn {
+    background: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.close-modal-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+/* Hover en filas de tabla */
+.custom-table tbody tr {
+    transition: background-color 0.15s;
+}
+
+.custom-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Form grid for events */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.form-grid input,
+.form-grid textarea {
+    padding: 0.6rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 1rem;
+}

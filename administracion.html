@@ -138,17 +138,189 @@
 
     <!--Modal para gestion de prestamos-->
     <div id="prestamoModalOverlay" class="modal-overlay hidden">
-      <div class="modal-content">
+      <div class="modal-content modal-content-wide">
         <header class="modal-header">
-          <h2>Gestión de Préstamos</h2>
+          <h2><i class="fa-solid fa-hand-holding-hand" style="margin-right: 8px; color: var(--guinda);"></i>Gestión de Préstamos</h2>
+          <div class="header-actions">
+            <button class="btn-guinda" onclick="toggleFormPrestamo()">
+              <i class="fa-solid fa-plus"></i> Nuevo Préstamo
+            </button>
+          </div>
         </header>
 
         <div class="modal-body">
-          <div id="prestamoList" class="prestamo-list-container"></div>
+          <!-- KPI Cards -->
+          <div class="stats-summary-grid">
+            <div class="stat-summary-card prestamo-abierto">
+              <span class="label"><i class="fa-solid fa-folder-open"></i> Abiertos</span>
+              <span class="number" id="prestamosAbiertos">8</span>
+            </div>
+            <div class="stat-summary-card prestamo-retraso">
+              <span class="label"><i class="fa-solid fa-clock"></i> Vencidos</span>
+              <span class="number" id="prestamosVencidos">1</span>
+            </div>
+            <div class="stat-summary-card prestamo-cerrado">
+              <span class="label"><i class="fa-solid fa-circle-check"></i> Cerrados</span>
+              <span class="number" id="prestamosCerrados">3</span>
+            </div>
+            <div class="stat-summary-card total">
+              <span class="label"><i class="fa-solid fa-list"></i> Total</span>
+              <span class="number" id="prestamosTotal">12</span>
+            </div>
+          </div>
+
+          <!-- Formulario Nuevo Préstamo (oculto por defecto) -->
+          <section id="addPrestamoForm" class="add-form-container hidden">
+            <h3><i class="fa-solid fa-file-circle-plus" style="margin-right: 6px;"></i>Registrar Nuevo Préstamo</h3>
+            <div class="form-grid-prestamo">
+              <div class="form-field">
+                <label for="prestamoUsuario">Usuario (Alumno)</label>
+                <select id="prestamoUsuario">
+                  <option value="">Seleccionar usuario...</option>
+                  <option value="1">Carlos López - 20230001</option>
+                  <option value="2">Ana Martínez - 20230045</option>
+                  <option value="3">Roberto Díaz - 20230102</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="prestamoMaterial">Material</label>
+                <select id="prestamoMaterial">
+                  <option value="">Seleccionar material...</option>
+                  <option value="1">Balón de fútbol</option>
+                  <option value="2">Balón de básquetbol</option>
+                  <option value="3">Balón de voley</option>
+                  <option value="4">Red de portería</option>
+                  <option value="5">Tablero de ajedrez</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="prestamoFechaLimite">Fecha Límite de Devolución</label>
+                <input type="datetime-local" id="prestamoFechaLimite">
+              </div>
+              <div class="form-field">
+                <label for="prestamoObservaciones">Observaciones</label>
+                <textarea id="prestamoObservaciones" rows="2" placeholder="Notas adicionales sobre el préstamo..."></textarea>
+              </div>
+            </div>
+            <div class="form-actions-prestamo">
+              <button class="btn-cancel" onclick="toggleFormPrestamo()">Cancelar</button>
+              <button class="btn-save">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Préstamo
+              </button>
+            </div>
+          </section>
+
+          <!-- Barra de búsqueda -->
+          <div class="search-bar-container">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+            <input type="text" placeholder="Buscar por usuario, material o estado..." id="searchPrestamo" style="padding-left: 2.5rem;">
+          </div>
+
+          <!-- Tabla CRUD de Préstamos -->
+          <div class="table-responsive">
+            <table class="custom-table" id="tablaPrestamos">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Usuario</th>
+                  <th>Material</th>
+                  <th>Fecha Solicitud</th>
+                  <th>Fecha Límite</th>
+                  <th>Estado General</th>
+                  <th>Estado Devolución</th>
+                  <th>Fecha Entrega Real</th>
+                  <th>Observaciones</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaPrestamosBody">
+                <!-- Fila ejemplo 1 -->
+                <tr>
+                  <td><strong>#1</strong></td>
+                  <td>
+                    <div class="user-cell">
+                      <div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div>
+                      <div>
+                        <span class="user-cell-name">Carlos López</span>
+                        <span class="user-cell-id">20230001</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="material-tag">Balón de fútbol</span></td>
+                  <td>27/03/2026<br><small style="color:#9ca3af;">09:15 AM</small></td>
+                  <td>03/04/2026<br><small style="color:#9ca3af;">05:00 PM</small></td>
+                  <td><span class="status-pill prestamo-pill-abierto"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Abierto</span></td>
+                  <td><span class="status-pill prestamo-pill-pendiente"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Pendiente</span></td>
+                  <td><span style="color:#9ca3af;">—</span></td>
+                  <td><small>Préstamo para torneo interno</small></td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn-icon edit" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                      <button class="btn-icon delete" title="Cancelar préstamo"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Fila ejemplo 2 -->
+                <tr>
+                  <td><strong>#2</strong></td>
+                  <td>
+                    <div class="user-cell">
+                      <div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div>
+                      <div>
+                        <span class="user-cell-name">Ana Martínez</span>
+                        <span class="user-cell-id">20230045</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="material-tag">Balón de básquetbol</span></td>
+                  <td>25/03/2026<br><small style="color:#9ca3af;">02:30 PM</small></td>
+                  <td>28/03/2026<br><small style="color:#9ca3af;">05:00 PM</small></td>
+                  <td><span class="status-pill prestamo-pill-retraso"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Retraso</span></td>
+                  <td><span class="status-pill prestamo-pill-pendiente"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Pendiente</span></td>
+                  <td><span style="color:#9ca3af;">—</span></td>
+                  <td><small>Clase de educación física</small></td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn-icon edit" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                      <button class="btn-icon delete" title="Cancelar préstamo"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Fila ejemplo 3 -->
+                <tr>
+                  <td><strong>#3</strong></td>
+                  <td>
+                    <div class="user-cell">
+                      <div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div>
+                      <div>
+                        <span class="user-cell-name">Roberto Díaz</span>
+                        <span class="user-cell-id">20230102</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="material-tag">Tablero de ajedrez</span></td>
+                  <td>20/03/2026<br><small style="color:#9ca3af;">11:00 AM</small></td>
+                  <td>25/03/2026<br><small style="color:#9ca3af;">05:00 PM</small></td>
+                  <td><span class="status-pill prestamo-pill-cerrado"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Cerrado</span></td>
+                  <td><span class="status-pill prestamo-pill-entregado"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Entregado</span></td>
+                  <td>24/03/2026<br><small style="color:#9ca3af;">04:20 PM</small></td>
+                  <td><small>Devuelto en buenas condiciones</small></td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn-icon edit" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                      <button class="btn-icon delete" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+
         <footer class="modal-footer">
+          <span style="color: #9ca3af; font-size: 0.85rem; margin-right: auto;">Mostrando 3 de 12 préstamos</span>
           <button class="btn-guinda" onclick="closePrestamos()">
-            Cerrar
+            <i class="fa-solid fa-xmark"></i> Cerrar
           </button>
         </footer>
       </div>

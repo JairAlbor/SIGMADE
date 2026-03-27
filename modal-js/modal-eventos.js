@@ -126,3 +126,8 @@ function openPrestamos() {
 function closePrestamos() {
     document.getElementById('prestamoModalOverlay').classList.add('hidden');
 }
+
+function toggleFormPrestamo() {
+    const form = document.getElementById('addPrestamoForm');
+    form.classList.toggle('hidden');
+}
