@@ -48,7 +48,7 @@
       </header>
 
       <div class="main-grid">
-        <button class="card-featured">
+        <button class="card-featured" onclick="openPrestamos()">
           <div class="card-header">
             <h3>Préstamos Activos</h3>
             <i class="fa-solid fa-book-open icon-large"></i>
@@ -66,14 +66,13 @@
           <div id="openModalBtn" class="btn-guinda">
             Abrir Gestión de Eventos
           </div>
-          <footer class="card-footer">Click para ver detalles →</footer>
         </button>
 
         <div class="secondary-grid">
           <button class="card-small" onclick="openDisciplines()">
             <i class="fa-solid fa-dumbbell"></i>
             <h3>Disciplinas</h3>
-            <p class="count">8</p>
+            <p class="count">3</p>
           </button>
 
           <button class="card-small" onclick="consultarUsuarios()">
@@ -110,6 +109,7 @@
             </button>
           </div>
         </header>
+
         <div class="modal-body">
           <section
             id="addEventForm"
@@ -136,6 +136,24 @@
       </div>
     </div>
 
+    <!--Modal para gestion de prestamos-->
+    <div id="prestamoModalOverlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h2>Gestión de Préstamos</h2>
+        </header>
+
+        <div class="modal-body">
+          <div id="prestamoList" class="prestamo-list-container"></div>
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-guinda" onclick="closePrestamos()">
+            Cerrar
+          </button>
+        </footer>
+      </div>
+    </div>
+    <!-- Modal para gestión de disciplinas -->
     <div id="disciplineModalOverlay" class="modal-overlay hidden">
       <div class="modal-content">
         <header class="modal-header">

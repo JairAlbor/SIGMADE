@@ -118,3 +118,13 @@ function renderDisciplines() {
         `;
     });
 }
+
+///Modal para registro de prestamo de material deportivo////
+
+function openPrestamos() {
+    document.getElementById('prestamoModalOverlay').classList.remove('hidden');
+}
+
+function closePrestamos() {
+    document.getElementById('prestamoModalOverlay').classList.add('hidden');
+}
