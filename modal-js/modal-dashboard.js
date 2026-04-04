@@ -17,3 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
       ///  window.location.href = 'login.html'; 
     }
 });
+function logout() {
+    // 1. Opcional: Limpiar datos del usuario (token, nombre, etc.)
+    // localStorage.removeItem('userToken');
+    // sessionStorage.clear();
+
+    // 2. Redirigir al login
+    window.location.href = "index.html"; // Asegúrate de que el nombre del archivo coincida
+}
