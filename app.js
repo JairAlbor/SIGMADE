@@ -69,32 +69,45 @@ async function loginUsuario() {
   const credencial = document.getElementById("loginMatri").value; // Puede ser email o ID
   const password = document.getElementById("loginPassword").value;
 
-  try {
-    const response = await fetch(apiLogin, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ credencial, password }),
-    });
+    try {
+        const response = await fetch(apiLogin, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credencial, password })
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (data.success) {
-      localStorage.setItem("nombreUsuario", data.user.nombre);
-      // Guardar info básica si es necesario y redirigir
-      console.log("Usuario logueado:", data.user.nombre);
-      if (data.user.rol === "Admin") {
-        window.location.href = "./administracion.html";
-      } else {
-        window.location.href = "./Dashboard.html";
-      }
-      document.getElementById("userName").textContent = `Hola, ${nombre}`;
-    } else {
-      console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
+        if (data.success) {
+            const usuarioInfo={
+                nombre: data.user.nombre,
+                apellidos: data.user.apellidos,
+                email: data.user.email,
+                telefono: data.user.telefono,
+                rol: data.user.rol,
+                estatus: data.user.estatus,
+                create_at: data.user.create_at
+            }
+
+            // Guardar la información del usuario en localStorage para covertilo en texto JSON
+            localStorage.setItem('usuarioInfo', JSON.stringify(usuarioInfo));
+
+            // Guardar info básica si es necesario y redirigir
+          console.log('Usuario logueado:', data.user.nombre);
+            if (data.user.rol === 'Admin') {
+                window.location.href = './administracion.html'; 
+            } else {
+                window.location.href = './Dashboard.html'; 
+            }
+              document.getElementById('userName').textContent = `Hola, ${nombre}`;
+        } else {
+            console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
     }
-  } catch (error) {
-    console.error("Error de conexión:", error);
-  }
-}
+};
+
 
 async function guardarArticulo() {
   const nombre = document.getElementById("nombreArticulo").value;
