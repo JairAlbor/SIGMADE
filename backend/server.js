@@ -3,9 +3,11 @@ const cors = require('cors');
 const connection = require('./db'); // Esto es connection, no db
 const path = require('path');
 const { create } = require('domain');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = 3001;
+const SECRET_KEY = "tu_clave_secreta_super_segura";
 
 // Middlewares
 app.use(cors());
@@ -15,23 +17,47 @@ app.use(express.urlencoded({ extended: true }));
 // ============ RUTAS API ============
 // (TODAS las rutas API van ANTES de express.static)
 
-// Ruta de prueba
-app.get('/api/test', (req, res) => {
-    console.log('✅ GET /api/test');
-    res.json({ message: 'Servidor funcionando' });
+// Middleware para verificar token JWT
+const verificarToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) {
+        return res.status(403).json({ success: false, message: 'No se envió token de autenticación (Authorization header).' });
+    }
+
+    const token = authHeader.split(' ')[1]; // El formato es "Bearer <token>"
+    if (!token) return res.status(403).json({ success: false, message: 'Formato de token inválido.' });
+
+    jwt.verify(token, SECRET_KEY, (err, decoded) => {
+        if (err) {
+            console.log("❌ Token inválido o expirado");
+            return res.status(401).json({ success: false, message: 'Token inválido o expirado.' });
+        }
+        req.userToken = decoded; // Pasamos los datos que iban en el token a la petición
+        next();
+    });
+};
+
+// Ruta de prueba (AHORA PROTEGIDA CON JWT)
+app.get('/api/test', verificarToken, (req, res) => {
+    console.log('✅ GET /api/test (Autorizado) - Token Decodificado:', req.userToken);
+    res.json({
+        success: true,
+        message: '¡Petición segura conseguida! El servidor comprobó tu token correctamente.',
+        datosDelToken: req.userToken
+    });
 });
 
 
 // LOGIN de usuario
 app.post('/api/login', (req, res) => {
     console.log('🔐 POST /api/login - Body:', req.body);
-    
+
     const { credencial, password } = req.body;
 
     if (!credencial || !password) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Faltan credenciales o contraseña' 
+        return res.status(400).json({
+            success: false,
+            message: 'Faltan credenciales o contraseña'
         });
     }
 
@@ -42,26 +68,35 @@ app.post('/api/login', (req, res) => {
         (err, rows) => {
             if (err) {
                 console.error('❌ Error en query:', err);
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Error en la base de datos' 
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error en la base de datos'
                 });
             }
 
             if (rows.length === 0) {
-                return res.status(401).json({ 
-                    success: false, 
-                    message: 'El usuario no existe.' 
+                return res.status(401).json({
+                    success: false,
+                    message: 'El usuario no existe.'
                 });
             }
 
             const usuario = rows[0];
-          // console.log('👤 Usuario encontrado:', usuario.nombre);
+            // console.log('👤 Usuario encontrado:', usuario.nombre);
 
             if (password === usuario.password) {
+
+                // Generamos nuestro Token JWT con los datos importantes del usuario
+                const token = jwt.sign(
+                    { id: usuario.id, rol: usuario.rol },
+                    SECRET_KEY,
+                    { expiresIn: '1h' } // El token expira en 1 hora
+                );
+
                 res.json({
                     success: true,
                     message: 'Sesión iniciada correctamente',
+                    token: token, // <--- Aqui mandamos el token al frontend
                     user: {
                         id: usuario.id,
                         nombre: usuario.nombre,
@@ -72,13 +107,13 @@ app.post('/api/login', (req, res) => {
                         telefono: usuario.telefono,
                         estatus: usuario.estatus,
                         create_at: usuario.created_at
-                            
+
                     }
                 });
             } else {
-                res.status(401).json({ 
-                    success: false, 
-                    message: 'La contraseña es incorrecta.' 
+                res.status(401).json({
+                    success: false,
+                    message: 'La contraseña es incorrecta.'
                 });
             }
         }
@@ -88,27 +123,27 @@ app.post('/api/login', (req, res) => {
 // REGISTRO de usuario - CORREGIDO (usando /api/usuario que pide el frontend)
 app.post('/api/usuario', (req, res) => {
     console.log('📝 POST /api/usuario - Body:', req.body);
-    
+
     const { identificador, nombres, apellidos, email, password, numero, rol } = req.body;
 
     if (!nombres || !email || !rol) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             success: false,
-            message: 'Campos obligatorios faltantes' 
+            message: 'Campos obligatorios faltantes'
         });
     }
 
     const query = 'INSERT INTO usuario (identificador, nombre, apellidos, email, password, telefono, rol) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    
+
     connection.query(
-        query, 
-        [identificador, nombres, apellidos, email, password, numero, rol], 
+        query,
+        [identificador, nombres, apellidos, email, password, numero, rol],
         (err, result) => {
             if (err) {
                 console.error('❌ Error:', err);
-                return res.status(500).json({ 
+                return res.status(500).json({
                     success: false,
-                    message: 'Error al registrar usuario: ' + err.message 
+                    message: 'Error al registrar usuario: ' + err.message
                 });
             }
 
@@ -170,12 +205,12 @@ app.delete('/api/usuario/:id', (req, res) => {
 });
 
 //endpoint para contar los usuarios
-app.get('/api/usuario/num', (req, res)=> {
+app.get('/api/usuario/num', (req, res) => {
     console.log(' GET /api/user/num');
 
     const query = 'SELECT COUNT(*) AS totalUser, SUM(CASE WHEN estatus = "Activo" THEN 1 ELSE 0 END) AS totalActivos, Sum(case when estatus = "Inactivo" then 1 else 0 end) as totalInactivos FROM usuario';
 
-     connection.query(query, (err, results) => {
+    connection.query(query, (err, results) => {
         if (err) {
             console.error('❌ Error:', err);
             return res.status(500).json({
@@ -185,11 +220,11 @@ app.get('/api/usuario/num', (req, res)=> {
         }
 
         const total = results[0].totalUser || 0;
-        
+
         res.json({
             success: true,
             total: total,
-            activos: results[0].totalActivos || 0, 
+            activos: results[0].totalActivos || 0,
             inactivos: results[0].totalInactivos || 0
         });
     });
@@ -201,24 +236,24 @@ app.get('/api/usuario/num', (req, res)=> {
 // insertar un nuevo ARTÍCULO
 app.post('/api/articulo', (req, res) => {
     console.log('📦 POST /api/articulo - Body:', req.body);
-    
+
     const { nombre, disciplina, estado, tipoMaterial } = req.body;
 
     if (!nombre || !disciplina) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             success: false,
-            error: 'Campos obligatorios faltantes' 
+            error: 'Campos obligatorios faltantes'
         });
     }
 
     const query = 'INSERT INTO material (nombre, disciplina_id, estado, tipoMaterial, disponible) VALUES (?, ?, ?, ?, "Libre")';
-    
+
     connection.query(query, [nombre, disciplina, estado, tipoMaterial], (err, result) => {
         if (err) {
             console.error('❌ Error:', err);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: 'Error al agregar articulo' 
+                error: 'Error al agregar articulo'
             });
         }
 
@@ -240,16 +275,16 @@ app.delete('/api/articulo/:id', (req, res) => {
     connection.query(query, [id], (err, result) => {
         if (err) {
             console.error('eli -- Error:', err);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: 'Error al eliminar artículo' 
+                error: 'Error al eliminar artículo'
             });
         }
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                error: 'Artículo no encontrado' 
+                error: 'Artículo no encontrado'
             });
         }
 
@@ -265,23 +300,23 @@ app.delete('/api/articulo/:id', (req, res) => {
 app.put('/api/articulo/:id', (req, res) => {
     console.log('📦 PUT /api/articulo/:id - Params:', req.params, 'Body:', req.body);
     const { id } = req.params;
-    const { nombre, disciplina, estado, disponible } = req.body;    
+    const { nombre, disciplina, estado, disponible } = req.body;
 
     const query = 'UPDATE material SET nombre = ?, disciplina_id = ?, estado = ?, disponible = ? WHERE id = ?';
 
     connection.query(query, [nombre, disciplina, estado, disponible, id], (err, result) => {
         if (err) {
             console.error('edi -- Error:', err);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: 'Error al editar artículo' 
+                error: 'Error al editar artículo'
             });
         }
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                error: 'Artículo no encontrado' 
+                error: 'Artículo no encontrado'
             });
         }
 
@@ -301,9 +336,9 @@ app.get('/api/consultar/articulo', (req, res) => {
     connection.query(query, (err, results) => {
         if (err) {
             console.error('❌ Error:', err);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: 'Error al consultar artículos' 
+                error: 'Error al consultar artículos'
             });
         }
 
@@ -336,7 +371,7 @@ app.get('/api/totalArt', (req, res) => {
 
         const total = results[0].total || 0;
         const disponibles = results[0].disponibles || 0;
-        
+
         res.json({
             success: true,
             total: total,
@@ -344,7 +379,7 @@ app.get('/api/totalArt', (req, res) => {
         });
     });
 });
- 
+
 
 // ============ ARCHIVOS ESTÁTICOS ============
 // (DESPUÉS de todas las rutas API)
@@ -365,5 +400,5 @@ app.listen(PORT, () => {
     console.log('   POST /api/usuario');
     console.log('   GET  /api/consultar/articulo');
     console.log('   POST /api/articulo\n');
-});     
+});
 
