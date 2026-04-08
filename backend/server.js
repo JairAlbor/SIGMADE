@@ -156,7 +156,7 @@ app.post('/api/usuario', (req, res) => {
     );
 });
 //endpoint para consultar todos los usuarios registrados
-app.get('/api/usuario', (req, res) => {
+app.get('/api/usuario', verificarToken, (req, res) => {
     console.log('📋 GET /api/usuario');
 
     const query = 'SELECT id, identificador, nombre, apellidos, email, telefono, rol, estatus, created_at FROM usuario';
@@ -178,7 +178,7 @@ app.get('/api/usuario', (req, res) => {
 });
 
 //endpoint para eliminar un usuario por su ID
-app.delete('/api/usuario/:id', (req, res) => {
+app.delete('/api/usuario/:id', verificarToken, (req, res) => {
     console.log('📦 DELETE /api/usuario/:id - Params:', req.params);
     const { id } = req.params;
     const query = 'DELETE FROM usuario WHERE id = ?';
@@ -205,7 +205,7 @@ app.delete('/api/usuario/:id', (req, res) => {
 });
 
 //endpoint para contar los usuarios
-app.get('/api/usuario/num', (req, res) => {
+app.get('/api/usuario/num', verificarToken, (req, res) => {
     console.log(' GET /api/user/num');
 
     const query = 'SELECT COUNT(*) AS totalUser, SUM(CASE WHEN estatus = "Activo" THEN 1 ELSE 0 END) AS totalActivos, Sum(case when estatus = "Inactivo" then 1 else 0 end) as totalInactivos FROM usuario';
@@ -234,7 +234,7 @@ app.get('/api/usuario/num', (req, res) => {
 
 
 // insertar un nuevo ARTÍCULO
-app.post('/api/articulo', (req, res) => {
+app.post('/api/articulo', verificarToken, (req, res) => {
     console.log('📦 POST /api/articulo - Body:', req.body);
 
     const { nombre, disciplina, estado, tipoMaterial } = req.body;
@@ -266,7 +266,7 @@ app.post('/api/articulo', (req, res) => {
 });
 
 //endpoint para elminar un artículo
-app.delete('/api/articulo/:id', (req, res) => {
+app.delete('/api/articulo/:id', verificarToken, (req, res) => {
     console.log('📦 DELETE /api/articulo/:id - Params:', req.params);
     const { id } = req.params;
 
@@ -297,7 +297,7 @@ app.delete('/api/articulo/:id', (req, res) => {
 
 
 //endpoint para editar un artículo
-app.put('/api/articulo/:id', (req, res) => {
+app.put('/api/articulo/:id', verificarToken, (req, res) => {
     console.log('📦 PUT /api/articulo/:id - Params:', req.params, 'Body:', req.body);
     const { id } = req.params;
     const { nombre, disciplina, estado, disponible } = req.body;
@@ -328,7 +328,7 @@ app.put('/api/articulo/:id', (req, res) => {
 });
 
 //consultar todos los artículos
-app.get('/api/consultar/articulo', (req, res) => {
+app.get('/api/consultar/articulo', verificarToken, (req, res) => {
     console.log('📦 GET /api/consultar/articulo');
 
     const query = 'SELECT m.id, m.nombre AS nombre_material, d.nombre AS nombre_disciplina, m.tipoMaterial, m.estado, m.disponible FROM material m JOIN disciplina d ON m.disciplina_id = d.id';
@@ -350,7 +350,7 @@ app.get('/api/consultar/articulo', (req, res) => {
 });
 
 // Endpoint único para estadísticas
-app.get('/api/totalArt', (req, res) => {
+app.get('/api/totalArt', verificarToken, (req, res) => {
     console.log('📦 GET /api/totalArt');
 
     const query = `

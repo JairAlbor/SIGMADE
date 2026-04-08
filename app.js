@@ -4,14 +4,14 @@ const apiLogin = "http://localhost:3001/api/login";
 const apiTest = "http://localhost:3001/api/total";
 
 
-window.addEventListener('DOMContentLoaded', function() {
-    cargarArticulos();
-    contarTotalMateriales();
-    contarDisponibles();
-    contarTotalUsuarios();
-    
+window.addEventListener('DOMContentLoaded', function () {
+  cargarArticulos();
+  contarTotalMateriales();
+  contarDisponibles();
+  contarTotalUsuarios();
+
   //  contarDisponibles(); // Llamamos a la función para contar disponibles al cargar la página
-    // Puedes agregar todas las que quieras
+  // Puedes agregar todas las que quieras
 });
 
 
@@ -69,43 +69,46 @@ async function loginUsuario() {
   const credencial = document.getElementById("loginMatri").value; // Puede ser email o ID
   const password = document.getElementById("loginPassword").value;
 
-    try {
-        const response = await fetch(apiLogin, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credencial, password })
-        });
+  try {
+    const response = await fetch(apiLogin, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credencial, password })
+    });
 
-        const data = await response.json();
+    const data = await response.json();
 
-        if (data.success) {
-            const usuarioInfo={
-                nombre: data.user.nombre,
-                apellidos: data.user.apellidos,
-                email: data.user.email,
-                telefono: data.user.telefono,
-                rol: data.user.rol,
-                estatus: data.user.estatus,
-                create_at: data.user.create_at
-            }
+    if (data.success) {
+      const usuarioInfo = {
+        nombre: data.user.nombre,
+        apellidos: data.user.apellidos,
+        email: data.user.email,
+        telefono: data.user.telefono,
+        rol: data.user.rol,
+        estatus: data.user.estatus,
+        create_at: data.user.create_at
+      }
 
-            // Guardar la información del usuario en localStorage para covertilo en texto JSON
-            localStorage.setItem('usuarioInfo', JSON.stringify(usuarioInfo));
+      // Guardar la información del usuario en localStorage para covertilo en texto JSON
+      localStorage.setItem('usuarioInfo', JSON.stringify(usuarioInfo));
 
-            // Guardar info básica si es necesario y redirigir
-          console.log('Usuario logueado:', data.user.nombre);
-            if (data.user.rol === 'Admin') {
-                window.location.href = './administracion.html'; 
-            } else {
-                window.location.href = './Dashboard.html'; 
-            }
-              document.getElementById('userName').textContent = `Hola, ${nombre}`;
-        } else {
-            console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
-        }
-    } catch (error) {
-        console.error('Error de conexión:', error);
+      // Guardamos el token
+      localStorage.setItem('userToken', data.token);
+
+      // Guardar info básica si es necesario y redirigir
+      console.log('Usuario logueado:', data.user.nombre);
+      if (data.user.rol === 'Admin') {
+        window.location.href = './administracion.html';
+      } else {
+        window.location.href = './Dashboard.html';
+      }
+      document.getElementById('userName').textContent = `Hola, ${nombre}`;
+    } else {
+      console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
     }
+  } catch (error) {
+    console.error('Error de conexión:', error);
+  }
 };
 
 
@@ -117,7 +120,10 @@ async function guardarArticulo() {
 
   fetch("/api/articulo", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+    },
     body: JSON.stringify({ nombre, disciplina, estado, tipoMaterial }),
   })
     .then((response) => response.json())
@@ -137,7 +143,9 @@ async function guardarArticulo() {
 }
 
 function cargarArticulos() {
-  fetch("http://localhost:3001/api/consultar/articulo")
+  fetch("http://localhost:3001/api/consultar/articulo", {
+    headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+  })
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
@@ -181,19 +189,21 @@ function cargarArticulos() {
 // Función para contar total de artículos
 function contarTotalMateriales() {
   const elTotal = document.getElementById("articulos");
-  
+
   if (!elTotal) {
     console.error("❌ Elemento con id 'articulos' no encontrado");
     return;
   }
 
-  fetch("http://localhost:3001/api/totalArt")
+  fetch("http://localhost:3001/api/totalArt", {
+    headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+  })
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
         elTotal.textContent = data.total;
         console.log("✅ Total actualizado:", data.total);
-      } else {  
+      } else {
         console.error("Error al obtener el total:", data.error);
         elTotal.textContent = "Error";
       }
@@ -207,13 +217,15 @@ function contarTotalMateriales() {
 // Función para contar artículos disponibles
 function contarDisponibles() {
   const dispon = document.getElementById("disponibles");
-  
+
   if (!dispon) {
     console.error("❌ Elemento con id 'disponibles' no encontrado");
     return;
   }
 
-  fetch("http://localhost:3001/api/totalArt")
+  fetch("http://localhost:3001/api/totalArt", {
+    headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+  })
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
@@ -236,8 +248,8 @@ function contarDisponibles() {
 //funcion para editar material
 function editarMaterial(id) {
   // Aquí podrías abrir un modal o redirigir a una página de edición
-//aun falta hacer un modal que pida la informacion nueva del articulo, pero en teoria con esto de manera
-//provicional ya podra actualizar
+  //aun falta hacer un modal que pida la informacion nueva del articulo, pero en teoria con esto de manera
+  //provicional ya podra actualizar
   const nuevoNombre = prompt("Ingrese el nuevo nombre del artículo:");
   const nuevaDisciplina = prompt("Ingrese la nueva disciplina:");
   const nuevoEstado = prompt("Ingrese el nuevo estado:");
@@ -246,7 +258,10 @@ function editarMaterial(id) {
   if (nuevoNombre && nuevaDisciplina && nuevoEstado && nuevaDisponibilidad) {
     fetch(`/api/articulo/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+      },
       body: JSON.stringify({
         nombre: nuevoNombre,
         disciplina: nuevaDisciplina,
@@ -260,7 +275,7 @@ function editarMaterial(id) {
           alert("Artículo editado correctamente");
           cargarArticulos(); // Refrescar la lista después de editar
           contarDisponibles(); // Actualizar disponibles después de editar
-        } else {  
+        } else {
           alert("Error al editar el artículo: " + data.error);
         }
       })
@@ -268,7 +283,7 @@ function editarMaterial(id) {
         console.error("Error de conexión:", error);
         alert("Error al conectar con el servidor");
       }
-    );
+      );
   } else {
     alert("Todos los campos son obligatorios para editar el artículo.");
   }
@@ -277,8 +292,9 @@ function editarMaterial(id) {
 //funcion para eliminar material
 function eliminarMaterial(id) {
   if (confirm("¿Estás seguro de eliminar este material?")) {
-    fetch(`/api/articulo/${id}`, {  
+    fetch(`/api/articulo/${id}`, {
       method: "DELETE",
+      headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
     })
       .then((response) => response.json())
       .then((data) => {
@@ -286,14 +302,44 @@ function eliminarMaterial(id) {
           alert("Artículo eliminado correctamente");
           cargarArticulos(); // Refrescar la lista después de eliminar
           contarTotalMateriales(); // Actualizar el total después de eliminar
-       //   contarDisponibles(); // Actualizar disponibles después de eliminar
+          //   contarDisponibles(); // Actualizar disponibles después de eliminar
         } else {
           alert("Error al eliminar el artículo: " + data.error);
-        } 
+        }
       })
       .catch((error) => {
         console.error("Error de conexión:", error);
         alert("Error al conectar con el servidor");
       });
+  }
+}
+
+// ============== FUNCIÓN PARA PROBAR EL TOKEN (JWT) ==============
+async function probarRutaProtegida() {
+  const token = localStorage.getItem('userToken');
+  if (!token) {
+    alert("⚠️ No hay token guardado. Debes iniciar sesión primero.");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:3001/api/test", {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // Aquí enviamos el token a la ruta protegida
+      }
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      alert("✅ Éxito:\n" + data.message + "\n\nDatos desde el token: " + JSON.stringify(data.datosDelToken, null, 2));
+      console.log("Prueba superada:", data);
+    } else {
+      alert("❌ Denegado:\n" + data.message);
+    }
+  } catch (error) {
+    console.error("Error al probar token:", error);
+    alert("Error de red intentando probar el token.");
   }
 }

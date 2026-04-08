@@ -14,7 +14,10 @@ function contarTotalUsuarios() {
 
   fetch("http://localhost:3001/api/usuario/num", {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+    },
   })
     .then((response) => response.json())
     .then((data) => {
@@ -39,19 +42,19 @@ function contarTotalUsuarios() {
 
 /////////////////////////////////////codigo para mostrar el modal de usuarios registrados y su informacion en una tabla/////////////////////////////////////
 function toggleModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.toggle('hidden');
-    }
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.toggle('hidden');
+  }
 }
 
 // 2. Cerrar el modal al hacer clic en la "X" o fuera del contenido
-window.onclick = function(event) {
-    const modal = document.getElementById('modalUsuarios');
-    // Si el usuario hace clic en el overlay (fondo oscuro), se cierra
-    if (event.target == modal) {
-        toggleModal('modalUsuarios');
-    }
+window.onclick = function (event) {
+  const modal = document.getElementById('modalUsuarios');
+  // Si el usuario hace clic en el overlay (fondo oscuro), se cierra
+  if (event.target == modal) {
+    toggleModal('modalUsuarios');
+  }
 }
 
 // Función para consultar y mostrar los usuarios registrados
@@ -59,14 +62,17 @@ window.onclick = function(event) {
 function consultarUsuarios() {
   fetch("http://localhost:3001/api/usuario", {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+    },
   })
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
         console.log("✅ Usuarios registrados:", data.usuarios);
         const tablaImprimir = document.getElementById("tablaUsuariosBody");
-        
+
         if (!tablaImprimir) {
           console.error("❌ Elemento con id 'tablaUsuariosBody' no encontrado");
           return;
@@ -79,10 +85,10 @@ function consultarUsuarios() {
 
         data.usuarios.forEach((usuario) => {
           const fila = document.createElement("tr");
-          
+
           // Definimos el color del badge según el estatus
           const estatusClass = usuario.estatus === 'Activo' ? 'active' : 'inactive';
-          
+
           fila.innerHTML = `
             <td><strong>${usuario.nombre} ${usuario.apellidos}</strong></td>
             <td>${usuario.email}</td>
@@ -124,7 +130,10 @@ function consultarUsuarios() {
 function consultarUsuarioPorID(id) {
   fetch(`http://localhost:3001/api/usuario/${id}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+    },
   })
     .then((response) => response.json())
     .then((data) => {
@@ -147,7 +156,10 @@ function eliminarUsuario(id) {
   if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
     fetch(`http://localhost:3001/api/usuario/${id}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+      },
     })
       .then((response) => response.json())
       .then((data) => {
@@ -155,12 +167,12 @@ function eliminarUsuario(id) {
           console.log("✅ Usuario eliminado:", data.usuario);
           //linea para abir el modal de usuarios registrados después de eliminar un usuario
           toggleModal('modalUsuarios');
-          
-         
+
+
           // Actualizar la lista de usuarios después de eliminar
           consultarUsuarios();
           contarTotalUsuarios(); // Actualizar el total de usuarios después de eliminar
-          
+
         } else {
           console.error("Error:", data.error);
           alert("Error al eliminar el usuario");
@@ -178,3 +190,33 @@ function eliminarUsuario(id) {
 window.onload = () => {
   contarTotalUsuarios();
 };
+
+// ============== FUNCIÓN PARA PROBAR EL TOKEN (JWT) ==============
+async function probarRutaProtegida() {
+  const token = localStorage.getItem('userToken');
+  if (!token) {
+    alert("⚠️ No hay token guardado. Debes iniciar sesión primero.");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:3001/api/test", {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      alert("✅ Éxito:\n" + data.message + "\n\nDatos desde el token: " + JSON.stringify(data.datosDelToken, null, 2));
+      console.log("Prueba superada:", data);
+    } else {
+      alert("❌ Denegado:\n" + data.message);
+    }
+  } catch (error) {
+    console.error("Error al probar token:", error);
+    alert("Error de red intentando probar el token.");
+  }
+}
