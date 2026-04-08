@@ -204,7 +204,7 @@
             </div>
             <div class="form-actions-prestamo">
               <button class="btn-cancel" onclick="toggleFormPrestamo()">Cancelar</button>
-              <button class="btn-save">
+              <button class="btn-save" onclick="savePrestamo()">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar Préstamo
               </button>
             </div>
@@ -213,7 +213,7 @@
           <!-- Barra de búsqueda -->
           <div class="search-bar-container">
             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
-            <input type="text" placeholder="Buscar por usuario, material o estado..." id="searchPrestamo" style="padding-left: 2.5rem;">
+            <input type="text" placeholder="Buscar por usuario, material o estado..." id="searchPrestamo" style="padding-left: 2.5rem;" oninput="filtrarPrestamos()">
           </div>
 
           <!-- Tabla CRUD de Préstamos -->
@@ -234,91 +234,14 @@
                 </tr>
               </thead>
               <tbody id="tablaPrestamosBody">
-                <!-- Fila ejemplo 1 -->
-                <tr>
-                  <td><strong>#1</strong></td>
-                  <td>
-                    <div class="user-cell">
-                      <div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div>
-                      <div>
-                        <span class="user-cell-name">Carlos López</span>
-                        <span class="user-cell-id">20230001</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td><span class="material-tag">Balón de fútbol</span></td>
-                  <td>27/03/2026<br><small style="color:#9ca3af;">09:15 AM</small></td>
-                  <td>03/04/2026<br><small style="color:#9ca3af;">05:00 PM</small></td>
-                  <td><span class="status-pill prestamo-pill-abierto"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Abierto</span></td>
-                  <td><span class="status-pill prestamo-pill-pendiente"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Pendiente</span></td>
-                  <td><span style="color:#9ca3af;">—</span></td>
-                  <td><small>Préstamo para torneo interno</small></td>
-                  <td>
-                    <div class="actions">
-                      <button class="btn-icon edit" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                      <button class="btn-icon delete" title="Cancelar préstamo"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                  </td>
-                </tr>
-                <!-- Fila ejemplo 2 -->
-                <tr>
-                  <td><strong>#2</strong></td>
-                  <td>
-                    <div class="user-cell">
-                      <div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div>
-                      <div>
-                        <span class="user-cell-name">Ana Martínez</span>
-                        <span class="user-cell-id">20230045</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td><span class="material-tag">Balón de básquetbol</span></td>
-                  <td>25/03/2026<br><small style="color:#9ca3af;">02:30 PM</small></td>
-                  <td>28/03/2026<br><small style="color:#9ca3af;">05:00 PM</small></td>
-                  <td><span class="status-pill prestamo-pill-retraso"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Retraso</span></td>
-                  <td><span class="status-pill prestamo-pill-pendiente"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Pendiente</span></td>
-                  <td><span style="color:#9ca3af;">—</span></td>
-                  <td><small>Clase de educación física</small></td>
-                  <td>
-                    <div class="actions">
-                      <button class="btn-icon edit" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                      <button class="btn-icon delete" title="Cancelar préstamo"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                  </td>
-                </tr>
-                <!-- Fila ejemplo 3 -->
-                <tr>
-                  <td><strong>#3</strong></td>
-                  <td>
-                    <div class="user-cell">
-                      <div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div>
-                      <div>
-                        <span class="user-cell-name">Roberto Díaz</span>
-                        <span class="user-cell-id">20230102</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td><span class="material-tag">Tablero de ajedrez</span></td>
-                  <td>20/03/2026<br><small style="color:#9ca3af;">11:00 AM</small></td>
-                  <td>25/03/2026<br><small style="color:#9ca3af;">05:00 PM</small></td>
-                  <td><span class="status-pill prestamo-pill-cerrado"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Cerrado</span></td>
-                  <td><span class="status-pill prestamo-pill-entregado"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Entregado</span></td>
-                  <td>24/03/2026<br><small style="color:#9ca3af;">04:20 PM</small></td>
-                  <td><small>Devuelto en buenas condiciones</small></td>
-                  <td>
-                    <div class="actions">
-                      <button class="btn-icon edit" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                      <button class="btn-icon delete" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                  </td>
-                </tr>
+                <!-- Se llena dinámicamente desde la BD -->
               </tbody>
             </table>
           </div>
         </div>
 
         <footer class="modal-footer">
-          <span style="color: #9ca3af; font-size: 0.85rem; margin-right: auto;">Mostrando 3 de 12 préstamos</span>
+          <span id="prestamoCounter" style="color: #9ca3af; font-size: 0.85rem; margin-right: auto;"></span>
           <button class="btn-guinda" onclick="closePrestamos()">
             <i class="fa-solid fa-xmark"></i> Cerrar
           </button>

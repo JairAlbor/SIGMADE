@@ -346,6 +346,189 @@ app.get('/api/totalArt', (req, res) => {
 });
  
 
+// ============ CRUD DE PRÉSTAMOS ============
+
+// Consultar TODOS los préstamos (JOIN prestamo + detalle_prestamo + usuario + material)
+app.get('/api/prestamo', (req, res) => {
+    console.log('📦 GET /api/prestamo');
+
+    const query = `
+        SELECT 
+            p.id,
+            p.usuario_id,
+            u.nombre AS usuario_nombre,
+            u.apellidos AS usuario_apellidos,
+            u.identificador AS usuario_matricula,
+            dp.material_id,
+            m.nombre AS material_nombre,
+            p.fecha_solicitud,
+            p.fecha_limite,
+            p.estado_general,
+            dp.estado_devolucion,
+            dp.fecha_entrega_real,
+            p.observaciones
+        FROM prestamo p
+        JOIN usuario u ON p.usuario_id = u.id
+        LEFT JOIN detalle_prestamo dp ON dp.prestamo_id = p.id
+        LEFT JOIN material m ON dp.material_id = m.id
+        ORDER BY p.id DESC
+    `;
+
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('❌ Error:', err);
+            return res.status(500).json({ success: false, error: 'Error al consultar préstamos' });
+        }
+        res.json({ success: true, prestamos: results });
+    });
+});
+
+// Estadísticas de préstamos (KPIs)
+app.get('/api/prestamo/stats', (req, res) => {
+    console.log('📊 GET /api/prestamo/stats');
+
+    const query = `
+        SELECT 
+            COUNT(*) AS total,
+            SUM(CASE WHEN estado_general = 'Abierto' THEN 1 ELSE 0 END) AS abiertos,
+            SUM(CASE WHEN estado_general = 'Retraso' THEN 1 ELSE 0 END) AS retraso,
+            SUM(CASE WHEN estado_general = 'Cerrado' THEN 1 ELSE 0 END) AS cerrados
+        FROM prestamo
+    `;
+
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('❌ Error:', err);
+            return res.status(500).json({ success: false, error: 'Error al consultar estadísticas' });
+        }
+        const stats = results[0];
+        res.json({
+            success: true,
+            total: stats.total || 0,
+            abiertos: stats.abiertos || 0,
+            retraso: stats.retraso || 0,
+            cerrados: stats.cerrados || 0
+        });
+    });
+});
+
+// Crear un nuevo préstamo (INSERT en prestamo + detalle_prestamo)
+app.post('/api/prestamo', (req, res) => {
+    console.log('📦 POST /api/prestamo - Body:', req.body);
+
+    const { usuario_id, material_id, fecha_limite, observaciones } = req.body;
+
+    if (!usuario_id || !material_id || !fecha_limite) {
+        return res.status(400).json({ success: false, message: 'Campos obligatorios faltantes (usuario, material, fecha límite)' });
+    }
+
+    // 1. Insertar en tabla prestamo
+    const queryPrestamo = `INSERT INTO prestamo (usuario_id, fecha_solicitud, fecha_limite, estado_general, observaciones) VALUES (?, NOW(), ?, 'Abierto', ?)`;
+
+    connection.query(queryPrestamo, [usuario_id, fecha_limite, observaciones || ''], (err, result) => {
+        if (err) {
+            console.error('❌ Error al crear préstamo:', err);
+            return res.status(500).json({ success: false, error: 'Error al crear préstamo: ' + err.message });
+        }
+
+        const prestamoId = result.insertId;
+
+        // 2. Insertar en tabla detalle_prestamo
+        const queryDetalle = `INSERT INTO detalle_prestamo (prestamo_id, material_id, estado_devolucion) VALUES (?, ?, 'Pendiente')`;
+
+        connection.query(queryDetalle, [prestamoId, material_id], (err2) => {
+            if (err2) {
+                console.error('❌ Error al crear detalle:', err2);
+                return res.status(500).json({ success: false, error: 'Error al crear detalle: ' + err2.message });
+            }
+
+            // 3. Marcar material como Ocupado
+            connection.query(`UPDATE material SET disponible = 'Ocupado' WHERE id = ?`, [material_id], (err3) => {
+                if (err3) console.error('⚠️ No se pudo actualizar material:', err3);
+
+                res.json({
+                    success: true,
+                    mensaje: 'Préstamo registrado correctamente',
+                    id: prestamoId
+                });
+            });
+        });
+    });
+});
+
+// Editar un préstamo existente
+app.put('/api/prestamo/:id', (req, res) => {
+    console.log('📦 PUT /api/prestamo/:id - Params:', req.params, 'Body:', req.body);
+
+    const { id } = req.params;
+    const { estado_general, estado_devolucion, fecha_entrega_real, observaciones } = req.body;
+
+    // Actualizar tabla prestamo
+    const queryPrestamo = `UPDATE prestamo SET estado_general = ?, observaciones = ? WHERE id = ?`;
+
+    connection.query(queryPrestamo, [estado_general, observaciones, id], (err) => {
+        if (err) {
+            console.error('❌ Error:', err);
+            return res.status(500).json({ success: false, error: 'Error al editar préstamo' });
+        }
+
+        // Actualizar tabla detalle_prestamo
+        const queryDetalle = `UPDATE detalle_prestamo SET estado_devolucion = ?, fecha_entrega_real = ? WHERE prestamo_id = ?`;
+        const fechaEntrega = fecha_entrega_real || null;
+
+        connection.query(queryDetalle, [estado_devolucion, fechaEntrega, id], (err2) => {
+            if (err2) {
+                console.error('❌ Error detalle:', err2);
+                return res.status(500).json({ success: false, error: 'Error al editar detalle' });
+            }
+
+            // Si el estado de devolución es "Entregado", liberar el material
+            if (estado_devolucion === 'Entregado') {
+                connection.query(
+                    `UPDATE material SET disponible = 'Libre' WHERE id = (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ? LIMIT 1)`,
+                    [id],
+                    () => {} // fire and forget
+                );
+            }
+
+            res.json({ success: true, mensaje: 'Préstamo actualizado' });
+        });
+    });
+});
+
+// Eliminar un préstamo
+app.delete('/api/prestamo/:id', (req, res) => {
+    console.log('📦 DELETE /api/prestamo/:id - Params:', req.params);
+    const { id } = req.params;
+
+    // Primero liberar el material
+    connection.query(
+        `UPDATE material SET disponible = 'Libre' WHERE id = (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ? LIMIT 1)`,
+        [id],
+        () => {
+            // Luego eliminar detalle
+            connection.query(`DELETE FROM detalle_prestamo WHERE prestamo_id = ?`, [id], (err) => {
+                if (err) {
+                    console.error('❌ Error:', err);
+                    return res.status(500).json({ success: false, error: 'Error al eliminar detalle' });
+                }
+
+                // Finalmente eliminar préstamo
+                connection.query(`DELETE FROM prestamo WHERE id = ?`, [id], (err2, result) => {
+                    if (err2) {
+                        console.error('❌ Error:', err2);
+                        return res.status(500).json({ success: false, error: 'Error al eliminar préstamo' });
+                    }
+                    if (result.affectedRows === 0) {
+                        return res.status(404).json({ success: false, error: 'Préstamo no encontrado' });
+                    }
+                    res.json({ success: true, mensaje: 'Préstamo eliminado' });
+                });
+            });
+        }
+    );
+});
+
 // ============ ARCHIVOS ESTÁTICOS ============
 // (DESPUÉS de todas las rutas API)
 app.use(express.static(path.join(__dirname, '..')));
