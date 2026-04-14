@@ -1,4 +1,4 @@
-window.onload = contarTotalUsuarios(); // Llamamos a la función para contar usuarios al cargar la página
+// La inicialización se hace abajo con window.onload
 
 //funcion para consultar el total de usuarios registrados
 function contarTotalUsuarios() {
@@ -142,28 +142,21 @@ function consultarUsuarioPorID(id) {
     });
 }
 
-//funcion para eliminar un usuario por su ID
 function eliminarUsuario(id) {
   if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
-    fetch(`http://localhost:3001/api/usuario/${id}`, {
+    fetch(`/api/usuario/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          console.log("✅ Usuario eliminado:", data.usuario);
-          //linea para abir el modal de usuarios registrados después de eliminar un usuario
+          alert('✅ ' + data.mensaje);
           toggleModal('modalUsuarios');
-          
-         
-          // Actualizar la lista de usuarios después de eliminar
           consultarUsuarios();
-          contarTotalUsuarios(); // Actualizar el total de usuarios después de eliminar
-          
+          contarTotalUsuarios();
         } else {
-          console.error("Error:", data.error);
-          alert("Error al eliminar el usuario");
+          alert('❌ ' + (data.error || 'Error al eliminar usuario'));
         }
       })
       .catch((error) => {
@@ -174,7 +167,26 @@ function eliminarUsuario(id) {
 }
 
 
-// Llamamos a la función para consultar usuarios al cargar la página
+// Llamamos a las funciones para cargar datos al cargar la página
 window.onload = () => {
   contarTotalUsuarios();
+  cargarStatsCard();
 };
+
+// Cargar estadísticas reales en la tarjeta azul de préstamos
+async function cargarStatsCard() {
+  try {
+    const res = await fetch('/api/prestamo/stats');
+    const data = await res.json();
+
+    if (data.success) {
+      // Préstamos activos = Abiertos + En retraso
+      const activos = data.abiertos + data.retraso;
+      document.getElementById('cardPrestamosActivos').textContent = activos;
+      document.getElementById('cardVencenHoy').textContent = data.vencen_hoy;
+      document.getElementById('cardVencidos').textContent = data.vencidos_real;
+    }
+  } catch (err) {
+    console.error('Error cargando stats de préstamos:', err);
+  }
+}

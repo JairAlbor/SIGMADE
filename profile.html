@@ -14,8 +14,8 @@
       <div class="logo">SIGMADE</div>
 
       <ul class="nav-menu">
-        <li class="nav-item" onclick="window.location.href='Dashboard.html'">Inicio</li>
-        <li class="nav-item">Catalogo</li>
+        <li class="nav-item" onclick="irAInicio()">Inicio</li>
+        <li class="nav-item" onclick="window.location.href='catalogo.html'">Catalogo</li>
         <li class="nav-item active">Perfil</li>
       </ul>
 
@@ -105,6 +105,21 @@
       </main>
     </section>
     <script>lucide.createIcons();</script>
+    <script>
+      function irAInicio() {
+        const info = localStorage.getItem('usuarioInfo');
+        if (info) {
+          const usuario = JSON.parse(info);
+          if (usuario.rol === 'Admin') {
+            window.location.href = 'administracion.html';
+          } else {
+            window.location.href = 'Dashboard.html';
+          }
+        } else {
+          window.location.href = 'index.html';
+        }
+      }
+    </script>
     <script src="profile.js"></script>
   </body>
 </html>

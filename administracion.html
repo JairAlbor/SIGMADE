@@ -55,12 +55,12 @@
           </div>
 
           <div class="card-body">
-            <div class="big-number">12</div>
+            <div class="big-number" id="cardPrestamosActivos">0</div>
             <p class="subtitle">Préstamos en curso</p>
 
             <div class="status-list">
-              <div class="status-item">Vencen hoy: 3</div>
-              <div class="status-item">Vencidos: 1</div>
+              <div class="status-item">Vencen hoy: <span id="cardVencenHoy">0</span></div>
+              <div class="status-item">Vencidos: <span id="cardVencidos">0</span></div>
             </div>
           </div>
           <div class="btn-guinda">
@@ -177,21 +177,13 @@
                 <label for="prestamoUsuario">Usuario (Alumno)</label>
                 <select id="prestamoUsuario">
                   <option value="">Seleccionar usuario...</option>
-                  <option value="1">Carlos López - 20230001</option>
-                  <option value="2">Ana Martínez - 20230045</option>
-                  <option value="3">Roberto Díaz - 20230102</option>
                 </select>
               </div>
               <div class="form-field">
-                <label for="prestamoMaterial">Material</label>
-                <select id="prestamoMaterial">
-                  <option value="">Seleccionar material...</option>
-                  <option value="1">Balón de fútbol</option>
-                  <option value="2">Balón de básquetbol</option>
-                  <option value="3">Balón de voley</option>
-                  <option value="4">Red de portería</option>
-                  <option value="5">Tablero de ajedrez</option>
-                </select>
+                <label>Material(es) disponibles</label>
+                <div id="materialesCheckboxContainer" class="materiales-checkbox-list">
+                  <!-- Se llena dinámicamente -->
+                </div>
               </div>
               <div class="form-field">
                 <label for="prestamoFechaLimite">Fecha Límite de Devolución</label>
@@ -223,12 +215,11 @@
                 <tr>
                   <th>ID</th>
                   <th>Usuario</th>
-                  <th>Material</th>
+                  <th>Material(es)</th>
                   <th>Fecha Solicitud</th>
                   <th>Fecha Límite</th>
-                  <th>Estado General</th>
-                  <th>Estado Devolución</th>
-                  <th>Fecha Entrega Real</th>
+                  <th>Estado</th>
+                  <th>Entrega</th>
                   <th>Observaciones</th>
                   <th>Acciones</th>
                 </tr>
@@ -254,19 +245,20 @@
         <header class="modal-header">
           <h2>Gestión de Disciplinas</h2>
           <div class="header-actions">
-            <button class="btn-guinda" onclick="toggleFormDisciplinas()">
+            <button class="btn-guinda" onclick="toggleDisciplineForm()">
               <i class="fa-solid fa-plus"></i> Agregar
             </button>
           </div>
         </header>
-        <!-- ********* Formulario para agregar nueva disciplina ********************* -->
         <div class="modal-body">
           <div id="disciplineForm" class="add-form-container hidden">
             <h3>Nueva Disciplina</h3>
             <div class="form-row">
-              <input type="text" placeholder="Nombre" id="inputName" />
-              <input type="text" placeholder="Entrenador" id="inputTrainer" />
-              <button class="btn-save" onclick="saveDiscipline()">
+              <input type="text" placeholder="Nombre de la disciplina" id="disciplinaNombre" />
+              <select id="disciplinaEntrenador">
+                <option value="">Sin entrenador</option>
+              </select>
+              <button class="btn-save" onclick="saveDisciplina()">
                 Guardar
               </button>
             </div>
@@ -297,19 +289,16 @@
 
             <div class="stats-summary-grid">
                 <div class="stat-summary-card active">
-                    
-                    <span class="label" >Activos</span>
-                    <span class="number" id="activeUsersModal">5</span>
+                    <span class="label">Activos</span>
+                    <span class="number" id="activeUsersModal">0</span>
                 </div>
                 <div class="stat-summary-card inactive">
-                    
-                    <span class="label">Inactivos</span>
-                    <span class="number" id="inactiveUsersModal"></span>
+                    <span class="label">Sancionados</span>
+                    <span class="number" id="inactiveUsersModal">0</span>
                 </div>
                 <div class="stat-summary-card total">
-                    
                     <span class="label">Total</span>
-                    <span class="number" id="totalUsersModal"></span>
+                    <span class="number" id="totalUsersModal">0</span>
                 </div>
             </div>
 
@@ -327,7 +316,7 @@
                         </tr>
                     </thead>
                     <tbody id="tablaUsuariosBody">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -337,13 +326,6 @@
         </div>
     </div>
 </div>
-
-    <div class="modal-footer">
-      <button class="btn-close-footer">Cerrar</button>
-    </div>
-  </div>
-</div>
-
 
     <script>
       lucide.createIcons();

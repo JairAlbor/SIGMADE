@@ -1,539 +1,749 @@
 const express = require('express');
 const cors = require('cors');
-const connection = require('./db'); // Esto es connection, no db
+const connection = require('./db');
 const path = require('path');
-const { create } = require('domain');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const PORT = 3001;
+const SALT_ROUNDS = 10;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ============ RUTAS API ============
-// (TODAS las rutas API van ANTES de express.static)
+// ============ UTILIDAD: Promisify queries ============
+function query(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        connection.query(sql, params, (err, results) => {
+            if (err) reject(err);
+            else resolve(results);
+        });
+    });
+}
 
-// Ruta de prueba
+// ============ RUTA DE PRUEBA ============
 app.get('/api/test', (req, res) => {
-    console.log('✅ GET /api/test');
     res.json({ message: 'Servidor funcionando' });
 });
 
+// ========================================================
+// ============ AUTENTICACIÓN ============
+// ========================================================
 
-// LOGIN de usuario
-app.post('/api/login', (req, res) => {
-    console.log('🔐 POST /api/login - Body:', req.body);
-    
+// LOGIN
+app.post('/api/login', async (req, res) => {
+    console.log('🔐 POST /api/login');
     const { credencial, password } = req.body;
 
     if (!credencial || !password) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Faltan credenciales o contraseña' 
-        });
+        return res.status(400).json({ success: false, message: 'Faltan credenciales o contraseña' });
     }
 
-    // Usar connection (no db) con callback
-    connection.query(
-        'SELECT identificador, nombre, apellidos, email, password, rol, telefono,estatus,created_at FROM usuario WHERE email = ? OR identificador = ? LIMIT 1',
-        [credencial, credencial],
-        (err, rows) => {
-            if (err) {
-                console.error('❌ Error en query:', err);
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Error en la base de datos' 
-                });
-            }
+    try {
+        const rows = await query(
+            'SELECT id, identificador, nombre, apellidos, email, password, rol, telefono, estatus, motivo_sancion, es_frecuente, created_at FROM usuario WHERE email = ? OR identificador = ? LIMIT 1',
+            [credencial, credencial]
+        );
 
-            if (rows.length === 0) {
-                return res.status(401).json({ 
-                    success: false, 
-                    message: 'El usuario no existe.' 
-                });
-            }
+        if (rows.length === 0) {
+            return res.status(401).json({ success: false, message: 'El usuario no existe.' });
+        }
 
-            const usuario = rows[0];
-          // console.log('👤 Usuario encontrado:', usuario.nombre);
+        const usuario = rows[0];
 
-            if (password === usuario.password) {
-                res.json({
-                    success: true,
-                    message: 'Sesión iniciada correctamente',
-                    user: {
-                        id: usuario.id,
-                        nombre: usuario.nombre,
-                        apellidos: usuario.apellidos,
-                        email: usuario.email,
-                        password: usuario.password,
-                        rol: usuario.rol,
-                        telefono: usuario.telefono,
-                        estatus: usuario.estatus,
-                        create_at: usuario.created_at
-                            
-                    }
-                });
-            } else {
-                res.status(401).json({ 
-                    success: false, 
-                    message: 'La contraseña es incorrecta.' 
-                });
+        // Intentar comparar con bcrypt primero, luego texto plano (migración)
+        let passwordMatch = false;
+        
+        if (usuario.password.startsWith('$2a$') || usuario.password.startsWith('$2b$')) {
+            // La contraseña en BD ya está hasheada
+            passwordMatch = await bcrypt.compare(password, usuario.password);
+        } else {
+            // La contraseña en BD está en texto plano
+            passwordMatch = (password === usuario.password);
+
+            // Si coincide en texto plano, migrar a bcrypt automáticamente
+            if (passwordMatch) {
+                const hash = await bcrypt.hash(password, SALT_ROUNDS);
+                await query('UPDATE usuario SET password = ? WHERE id = ?', [hash, usuario.id]);
+                console.log(`🔄 Contraseña migrada a bcrypt para usuario ${usuario.id}`);
             }
         }
-    );
-});
 
-// REGISTRO de usuario - CORREGIDO (usando /api/usuario que pide el frontend)
-app.post('/api/usuario', (req, res) => {
-    console.log('📝 POST /api/usuario - Body:', req.body);
-    
-    const { identificador, nombres, apellidos, email, password, numero, rol } = req.body;
-
-    if (!nombres || !email || !rol) {
-        return res.status(400).json({ 
-            success: false,
-            message: 'Campos obligatorios faltantes' 
-        });
-    }
-
-    const query = 'INSERT INTO usuario (identificador, nombre, apellidos, email, password, telefono, rol) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    
-    connection.query(
-        query, 
-        [identificador, nombres, apellidos, email, password, numero, rol], 
-        (err, result) => {
-            if (err) {
-                console.error('❌ Error:', err);
-                return res.status(500).json({ 
-                    success: false,
-                    message: 'Error al registrar usuario: ' + err.message 
-                });
-            }
-
+        if (passwordMatch) {
             res.json({
                 success: true,
-                mensaje: 'Usuario registrado',
-                id: result.insertId
+                message: 'Sesión iniciada correctamente',
+                user: {
+                    id: usuario.id,
+                    identificador: usuario.identificador,
+                    nombre: usuario.nombre,
+                    apellidos: usuario.apellidos,
+                    email: usuario.email,
+                    rol: usuario.rol,
+                    telefono: usuario.telefono,
+                    estatus: usuario.estatus,
+                    motivo_sancion: usuario.motivo_sancion,
+                    es_frecuente: usuario.es_frecuente,
+                    created_at: usuario.created_at
+                }
             });
+        } else {
+            res.status(401).json({ success: false, message: 'La contraseña es incorrecta.' });
         }
-    );
+    } catch (err) {
+        console.error('❌ Error login:', err);
+        res.status(500).json({ success: false, message: 'Error en la base de datos' });
+    }
 });
-//endpoint para consultar todos los usuarios registrados
-app.get('/api/usuario', (req, res) => {
-    console.log('📋 GET /api/usuario');
 
-    const query = 'SELECT id, identificador, nombre, apellidos, email, telefono, rol, estatus, created_at FROM usuario';
+// ========================================================
+// ============ CRUD DE USUARIOS ============
+// ========================================================
 
-    connection.query(query, (err, results) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({
-                success: false,
-                error: 'Error al consultar usuarios'
-            });
-        }
+// REGISTRAR usuario (con bcrypt)
+app.post('/api/usuario', async (req, res) => {
+    console.log('📝 POST /api/usuario');
+    const { identificador, nombres, apellidos, email, password, numero, rol } = req.body;
 
+    if (!nombres || !email || !rol || !password) {
+        return res.status(400).json({ success: false, message: 'Campos obligatorios faltantes' });
+    }
+
+    try {
+        const hash = await bcrypt.hash(password, SALT_ROUNDS);
+        const result = await query(
+            'INSERT INTO usuario (identificador, nombre, apellidos, email, password, telefono, rol) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [identificador, nombres, apellidos, email, hash, numero, rol]
+        );
+        res.json({ success: true, mensaje: 'Usuario registrado', id: result.insertId });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, message: 'Error al registrar usuario: ' + err.message });
+    }
+});
+
+// LISTAR todos los usuarios
+app.get('/api/usuario', async (req, res) => {
+    try {
+        const results = await query('SELECT id, identificador, nombre, apellidos, email, telefono, rol, estatus, motivo_sancion, created_at FROM usuario');
+        res.json({ success: true, usuarios: results });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar usuarios' });
+    }
+});
+
+// ESTADÍSTICAS de usuarios
+app.get('/api/usuario/num', async (req, res) => {
+    try {
+        const results = await query(`
+            SELECT COUNT(*) AS totalUser,
+                SUM(CASE WHEN estatus = 'Activo' THEN 1 ELSE 0 END) AS totalActivos,
+                SUM(CASE WHEN estatus = 'Sancionado' THEN 1 ELSE 0 END) AS totalSancionados,
+                SUM(CASE WHEN estatus NOT IN ('Activo','Sancionado') THEN 1 ELSE 0 END) AS totalOtros
+            FROM usuario
+        `);
+        const r = results[0];
         res.json({
             success: true,
-            usuarios: results
+            total: r.totalUser || 0,
+            activos: r.totalActivos || 0,
+            inactivos: r.totalSancionados || 0,
+            sancionados: r.totalSancionados || 0
         });
-    });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar estadísticas' });
+    }
 });
 
-//endpoint para eliminar un usuario por su ID
-app.delete('/api/usuario/:id', (req, res) => {
-    console.log('📦 DELETE /api/usuario/:id - Params:', req.params);
+// EDITAR usuario completo (nombre, apellidos, email, rol)
+app.put('/api/usuario/:id', async (req, res) => {
+    console.log('📝 PUT /api/usuario/:id');
     const { id } = req.params;
-    const query = 'DELETE FROM usuario WHERE id = ?';
+    const { nombre, apellidos, email, rol } = req.body;
 
-    connection.query(query, [id], (err, result) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({
-                success: false,
-                error: 'Error al eliminar usuario'
-            });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                error: 'Usuario no encontrado'
-            });
-        }
-        res.json({
-            success: true,
-            mensaje: 'Usuario eliminado'
-        });
-    });
+    try {
+        const result = await query(
+            'UPDATE usuario SET nombre = ?, apellidos = ?, email = ?, rol = ? WHERE id = ?',
+            [nombre, apellidos, email, rol, id]
+        );
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+        res.json({ success: true, mensaje: 'Usuario actualizado' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al editar usuario' });
+    }
 });
 
-//endpoint para contar los usuarios
-app.get('/api/usuario/num', (req, res)=> {
-    console.log(' GET /api/user/num');
+// CAMBIAR estatus de usuario (Activo/Sancionado)
+app.put('/api/usuario/:id/estatus', async (req, res) => {
+    const { id } = req.params;
+    const { estatus, motivo_sancion } = req.body;
 
-    const query = 'SELECT COUNT(*) AS totalUser, SUM(CASE WHEN estatus = "Activo" THEN 1 ELSE 0 END) AS totalActivos, Sum(case when estatus = "Inactivo" then 1 else 0 end) as totalInactivos FROM usuario';
+    try {
+        await query('UPDATE usuario SET estatus = ?, motivo_sancion = ? WHERE id = ?',
+            [estatus, estatus === 'Sancionado' ? (motivo_sancion || 'Sin especificar') : null, id]);
+        res.json({ success: true, mensaje: `Estatus cambiado a ${estatus}` });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al cambiar estatus' });
+    }
+});
 
-     connection.query(query, (err, results) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({
+// ELIMINAR usuario (verificar préstamos activos)
+app.delete('/api/usuario/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Verificar préstamos activos
+        const prestamos = await query(
+            "SELECT COUNT(*) AS count FROM prestamo WHERE usuario_id = ? AND estado_general IN ('Pendiente','Abierto','Activo','Renovado')",
+            [id]
+        );
+        if (prestamos[0].count > 0) {
+            return res.status(400).json({
                 success: false,
-                error: 'Error al consultar numero de usuarios'
+                error: `No se puede eliminar: el usuario tiene ${prestamos[0].count} préstamo(s) activo(s)`
             });
         }
 
-        const total = results[0].totalUser || 0;
-        
-        res.json({
-            success: true,
-            total: total,
-            activos: results[0].totalActivos || 0, 
-            inactivos: results[0].totalInactivos || 0
-        });
-    });
+        const result = await query('DELETE FROM usuario WHERE id = ?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+        res.json({ success: true, mensaje: 'Usuario eliminado' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al eliminar usuario' });
+    }
 });
 
+// SANCIONAR usuario desde un préstamo
+app.put('/api/usuario/:id/sancionar', async (req, res) => {
+    const { id } = req.params;
+    const { motivo } = req.body;
 
+    try {
+        await query("UPDATE usuario SET estatus = 'Sancionado', motivo_sancion = ? WHERE id = ?",
+            [motivo || 'Sancionado por préstamo', id]);
+        res.json({ success: true, mensaje: 'Usuario sancionado' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al sancionar usuario' });
+    }
+});
 
+// ========================================================
+// ============ CRUD DE MATERIALES ============
+// ========================================================
 
-// insertar un nuevo ARTÍCULO
-app.post('/api/articulo', (req, res) => {
-    console.log('📦 POST /api/articulo - Body:', req.body);
-    
+// CREAR material
+app.post('/api/articulo', async (req, res) => {
+    console.log('📦 POST /api/articulo');
     const { nombre, disciplina, estado, tipoMaterial } = req.body;
 
     if (!nombre || !disciplina) {
-        return res.status(400).json({ 
-            success: false,
-            error: 'Campos obligatorios faltantes' 
-        });
+        return res.status(400).json({ success: false, error: 'Campos obligatorios faltantes' });
     }
 
-    const query = 'INSERT INTO material (nombre, disciplina_id, estado, tipoMaterial, disponible) VALUES (?, ?, ?, ?, "Libre")';
-    
-    connection.query(query, [nombre, disciplina, estado, tipoMaterial], (err, result) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({ 
-                success: false,
-                error: 'Error al agregar articulo' 
-            });
-        }
-
-        res.json({
-            success: true,
-            mensaje: 'Artículo agregado',
-            id: result.insertId
-        });
-    });
+    try {
+        const result = await query(
+            'INSERT INTO material (nombre, disciplina_id, estado, tipoMaterial, disponible) VALUES (?, ?, ?, ?, 1)',
+            [nombre, disciplina, estado, tipoMaterial]
+        );
+        res.json({ success: true, mensaje: 'Artículo agregado', id: result.insertId });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al agregar articulo' });
+    }
 });
 
-//endpoint para elminar un artículo
-app.delete('/api/articulo/:id', (req, res) => {
-    console.log('📦 DELETE /api/articulo/:id - Params:', req.params);
+// ELIMINAR material
+app.delete('/api/articulo/:id', async (req, res) => {
     const { id } = req.params;
-
-    const query = 'DELETE FROM material WHERE id = ?';
-
-    connection.query(query, [id], (err, result) => {
-        if (err) {
-            console.error('eli -- Error:', err);
-            return res.status(500).json({ 
-                success: false,
-                error: 'Error al eliminar artículo' 
-            });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Artículo no encontrado' 
-            });
-        }
-
-        res.json({
-            success: true,
-            mensaje: 'Artículo eliminado'
-        });
-    });
+    try {
+        const result = await query('DELETE FROM material WHERE id = ?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Artículo no encontrado' });
+        res.json({ success: true, mensaje: 'Artículo eliminado' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al eliminar artículo' });
+    }
 });
 
-
-//endpoint para editar un artículo
-app.put('/api/articulo/:id', (req, res) => {
-    console.log('📦 PUT /api/articulo/:id - Params:', req.params, 'Body:', req.body);
+// EDITAR material
+app.put('/api/articulo/:id', async (req, res) => {
     const { id } = req.params;
-    const { nombre, disciplina, estado, disponible } = req.body;    
+    const { nombre, disciplina, estado, disponible } = req.body;
 
-    const query = 'UPDATE material SET nombre = ?, disciplina_id = ?, estado = ?, disponible = ? WHERE id = ?';
-
-    connection.query(query, [nombre, disciplina, estado, disponible, id], (err, result) => {
-        if (err) {
-            console.error('edi -- Error:', err);
-            return res.status(500).json({ 
-                success: false,
-                error: 'Error al editar artículo' 
-            });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Artículo no encontrado' 
-            });
-        }
-
-        res.json({
-            success: true,
-            mensaje: 'Artículo editado'
-        });
-    });
+    try {
+        const result = await query(
+            'UPDATE material SET nombre = ?, disciplina_id = ?, estado = ?, disponible = ? WHERE id = ?',
+            [nombre, disciplina, estado, disponible, id]
+        );
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Artículo no encontrado' });
+        res.json({ success: true, mensaje: 'Artículo editado' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al editar artículo' });
+    }
 });
 
-//consultar todos los artículos
-app.get('/api/consultar/articulo', (req, res) => {
-    console.log('📦 GET /api/consultar/articulo');
-
-    const query = 'SELECT m.id, m.nombre AS nombre_material, d.nombre AS nombre_disciplina, m.tipoMaterial, m.estado, m.disponible FROM material m JOIN disciplina d ON m.disciplina_id = d.id';
-
-    connection.query(query, (err, results) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({ 
-                success: false,
-                error: 'Error al consultar artículos' 
-            });
-        }
-
-        res.json({
-            success: true,
-            articulos: results
-        });
-    });
+// LISTAR todos los materiales
+app.get('/api/consultar/articulo', async (req, res) => {
+    try {
+        const results = await query(
+            'SELECT m.id, m.nombre AS nombre_material, d.nombre AS nombre_disciplina, m.tipoMaterial, m.estado, m.disponible FROM material m LEFT JOIN disciplina d ON m.disciplina_id = d.id'
+        );
+        res.json({ success: true, articulos: results });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar artículos' });
+    }
 });
 
-// Endpoint único para estadísticas
-app.get('/api/totalArt', (req, res) => {
-    console.log('📦 GET /api/totalArt');
-
-    const query = `
-        SELECT 
-            COUNT(*) AS total, 
-            SUM(CASE WHEN disponible = "Libre" THEN 1 ELSE 0 END) AS disponibles 
-        FROM material
-    `;
-
-    connection.query(query, (err, results) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({
-                success: false,
-                error: 'Error al consultar estadísticas'
-            });
-        }
-
-        const total = results[0].total || 0;
-        const disponibles = results[0].disponibles || 0;
-        
-        res.json({
-            success: true,
-            total: total,
-            disponibles: disponibles
-        });
-    });
+// MATERIALES DISPONIBLES (solo los libres, para selects)
+app.get('/api/articulo/disponibles', async (req, res) => {
+    try {
+        const results = await query(
+            'SELECT m.id, m.nombre AS nombre_material, d.nombre AS nombre_disciplina, m.estado FROM material m LEFT JOIN disciplina d ON m.disciplina_id = d.id WHERE m.disponible = 1'
+        );
+        res.json({ success: true, materiales: results });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar materiales disponibles' });
+    }
 });
- 
 
+// ESTADÍSTICAS de materiales
+app.get('/api/totalArt', async (req, res) => {
+    try {
+        const results = await query(`
+            SELECT COUNT(*) AS total, SUM(CASE WHEN disponible = 1 THEN 1 ELSE 0 END) AS disponibles FROM material
+        `);
+        res.json({ success: true, total: results[0].total || 0, disponibles: results[0].disponibles || 0 });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar estadísticas' });
+    }
+});
+
+// ========================================================
 // ============ CRUD DE PRÉSTAMOS ============
+// ========================================================
 
-// Consultar TODOS los préstamos (JOIN prestamo + detalle_prestamo + usuario + material)
-app.get('/api/prestamo', (req, res) => {
-    console.log('📦 GET /api/prestamo');
-
-    const query = `
-        SELECT 
-            p.id,
-            p.usuario_id,
-            u.nombre AS usuario_nombre,
-            u.apellidos AS usuario_apellidos,
-            u.identificador AS usuario_matricula,
-            dp.material_id,
-            m.nombre AS material_nombre,
-            p.fecha_solicitud,
-            p.fecha_limite,
-            p.estado_general,
-            dp.estado_devolucion,
-            dp.fecha_entrega_real,
-            p.observaciones
-        FROM prestamo p
-        JOIN usuario u ON p.usuario_id = u.id
-        LEFT JOIN detalle_prestamo dp ON dp.prestamo_id = p.id
-        LEFT JOIN material m ON dp.material_id = m.id
-        ORDER BY p.id DESC
-    `;
-
-    connection.query(query, (err, results) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({ success: false, error: 'Error al consultar préstamos' });
-        }
+// LISTAR todos los préstamos (JOIN completo)
+app.get('/api/prestamo', async (req, res) => {
+    try {
+        const results = await query(`
+            SELECT 
+                p.id, p.usuario_id,
+                u.nombre AS usuario_nombre, u.apellidos AS usuario_apellidos, u.identificador AS usuario_matricula,
+                p.fecha_solicitud, p.fecha_limite, p.fecha_entrega, p.estado_general, p.observaciones,
+                GROUP_CONCAT(m.nombre SEPARATOR ', ') AS materiales,
+                GROUP_CONCAT(m.id SEPARATOR ',') AS material_ids,
+                GROUP_CONCAT(IFNULL(dp.estado_devolucion,'') SEPARATOR ', ') AS estados_devolucion,
+                GROUP_CONCAT(IFNULL(dp.fecha_entrega_real,'') SEPARATOR ', ') AS fechas_entrega_real
+            FROM prestamo p
+            JOIN usuario u ON p.usuario_id = u.id
+            LEFT JOIN detalle_prestamo dp ON dp.prestamo_id = p.id
+            LEFT JOIN material m ON dp.material_id = m.id
+            GROUP BY p.id
+            ORDER BY p.id DESC
+        `);
         res.json({ success: true, prestamos: results });
-    });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar préstamos' });
+    }
 });
 
-// Estadísticas de préstamos (KPIs)
-app.get('/api/prestamo/stats', (req, res) => {
-    console.log('📊 GET /api/prestamo/stats');
+// DETALLE de un préstamo
+app.get('/api/prestamo/:id/detalle', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const prestamo = await query(`
+            SELECT p.*, u.nombre AS usuario_nombre, u.apellidos AS usuario_apellidos, u.identificador AS usuario_matricula
+            FROM prestamo p JOIN usuario u ON p.usuario_id = u.id WHERE p.id = ?`, [id]);
+        const detalles = await query(`
+            SELECT dp.*, m.nombre AS material_nombre, m.estado AS material_estado
+            FROM detalle_prestamo dp JOIN material m ON dp.material_id = m.id WHERE dp.prestamo_id = ?`, [id]);
 
-    const query = `
-        SELECT 
-            COUNT(*) AS total,
-            SUM(CASE WHEN estado_general = 'Abierto' THEN 1 ELSE 0 END) AS abiertos,
-            SUM(CASE WHEN estado_general = 'Retraso' THEN 1 ELSE 0 END) AS retraso,
-            SUM(CASE WHEN estado_general = 'Cerrado' THEN 1 ELSE 0 END) AS cerrados
-        FROM prestamo
-    `;
+        if (prestamo.length === 0) return res.status(404).json({ success: false, error: 'Préstamo no encontrado' });
+        res.json({ success: true, prestamo: prestamo[0], detalles });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al obtener detalle' });
+    }
+});
 
-    connection.query(query, (err, results) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({ success: false, error: 'Error al consultar estadísticas' });
-        }
-        const stats = results[0];
+// ESTADÍSTICAS de préstamos (KPIs)
+app.get('/api/prestamo/stats', async (req, res) => {
+    try {
+        const results = await query(`
+            SELECT 
+                COUNT(*) AS total,
+                SUM(CASE WHEN estado_general IN ('Abierto','Activo','Renovado') THEN 1 ELSE 0 END) AS abiertos,
+                SUM(CASE WHEN estado_general = 'Vencido' OR (estado_general IN ('Abierto','Activo','Renovado') AND fecha_limite < NOW()) THEN 1 ELSE 0 END) AS retraso,
+                SUM(CASE WHEN estado_general IN ('Cerrado','Finalizado','Entregado','Devuelto') THEN 1 ELSE 0 END) AS cerrados,
+                SUM(CASE WHEN estado_general IN ('Abierto','Activo','Renovado') AND DATE(fecha_limite) = CURDATE() THEN 1 ELSE 0 END) AS vencen_hoy,
+                SUM(CASE WHEN estado_general IN ('Abierto','Activo','Renovado') AND fecha_limite < NOW() THEN 1 ELSE 0 END) AS vencidos_real
+            FROM prestamo
+        `);
+        const s = results[0];
         res.json({
             success: true,
-            total: stats.total || 0,
-            abiertos: stats.abiertos || 0,
-            retraso: stats.retraso || 0,
-            cerrados: stats.cerrados || 0
+            total: s.total || 0, abiertos: s.abiertos || 0, retraso: s.retraso || 0,
+            cerrados: s.cerrados || 0, vencen_hoy: s.vencen_hoy || 0, vencidos_real: s.vencidos_real || 0
         });
-    });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar estadísticas' });
+    }
 });
 
-// Crear un nuevo préstamo (INSERT en prestamo + detalle_prestamo)
-app.post('/api/prestamo', (req, res) => {
-    console.log('📦 POST /api/prestamo - Body:', req.body);
+// CREAR préstamo (multi-material)
+app.post('/api/prestamo', async (req, res) => {
+    console.log('📦 POST /api/prestamo');
+    const { usuario_id, material_ids, fecha_limite, observaciones } = req.body;
+    // material_ids puede ser un array [1,2,3] o un solo valor (backward compat)
+    const materiales = Array.isArray(material_ids) ? material_ids : (req.body.material_id ? [req.body.material_id] : []);
 
-    const { usuario_id, material_id, fecha_limite, observaciones } = req.body;
-
-    if (!usuario_id || !material_id || !fecha_limite) {
-        return res.status(400).json({ success: false, message: 'Campos obligatorios faltantes (usuario, material, fecha límite)' });
+    if (!usuario_id || materiales.length === 0 || !fecha_limite) {
+        return res.status(400).json({ success: false, message: 'Campos obligatorios faltantes (usuario, material(es), fecha límite)' });
     }
 
-    // 1. Insertar en tabla prestamo
-    const queryPrestamo = `INSERT INTO prestamo (usuario_id, fecha_solicitud, fecha_limite, estado_general, observaciones) VALUES (?, NOW(), ?, 'Abierto', ?)`;
-
-    connection.query(queryPrestamo, [usuario_id, fecha_limite, observaciones || ''], (err, result) => {
-        if (err) {
-            console.error('❌ Error al crear préstamo:', err);
-            return res.status(500).json({ success: false, error: 'Error al crear préstamo: ' + err.message });
+    try {
+        // 1. Verificar que el usuario no tenga préstamo activo
+        const activos = await query(
+            "SELECT COUNT(*) AS count FROM prestamo WHERE usuario_id = ? AND estado_general IN ('Pendiente','Abierto','Activo','Renovado')",
+            [usuario_id]
+        );
+        if (activos[0].count > 0) {
+            return res.status(400).json({ success: false, message: 'El usuario ya tiene un préstamo activo/pendiente' });
         }
 
+        // 2. Verificar que TODOS los materiales estén disponibles
+        const disponibles = await query(
+            `SELECT id FROM material WHERE id IN (${materiales.map(() => '?').join(',')}) AND disponible = 1`,
+            materiales
+        );
+        if (disponibles.length !== materiales.length) {
+            return res.status(400).json({ success: false, message: 'Uno o más materiales no están disponibles' });
+        }
+
+        // 3. Insertar préstamo
+        const result = await query(
+            "INSERT INTO prestamo (usuario_id, fecha_solicitud, fecha_limite, estado_general, observaciones) VALUES (?, NOW(), ?, 'Activo', ?)",
+            [usuario_id, fecha_limite, observaciones || '']
+        );
         const prestamoId = result.insertId;
 
-        // 2. Insertar en tabla detalle_prestamo
-        const queryDetalle = `INSERT INTO detalle_prestamo (prestamo_id, material_id, estado_devolucion) VALUES (?, ?, 'Pendiente')`;
+        // 4. Insertar detalle por cada material
+        for (const mat_id of materiales) {
+            await query('INSERT INTO detalle_prestamo (prestamo_id, material_id) VALUES (?, ?)', [prestamoId, mat_id]);
+        }
 
-        connection.query(queryDetalle, [prestamoId, material_id], (err2) => {
-            if (err2) {
-                console.error('❌ Error al crear detalle:', err2);
-                return res.status(500).json({ success: false, error: 'Error al crear detalle: ' + err2.message });
-            }
+        // 5. Marcar materiales como ocupados
+        await query(
+            `UPDATE material SET disponible = 0 WHERE id IN (${materiales.map(() => '?').join(',')})`,
+            materiales
+        );
 
-            // 3. Marcar material como Ocupado
-            connection.query(`UPDATE material SET disponible = 'Ocupado' WHERE id = ?`, [material_id], (err3) => {
-                if (err3) console.error('⚠️ No se pudo actualizar material:', err3);
-
-                res.json({
-                    success: true,
-                    mensaje: 'Préstamo registrado correctamente',
-                    id: prestamoId
-                });
-            });
-        });
-    });
+        res.json({ success: true, mensaje: 'Préstamo registrado correctamente', id: prestamoId });
+    } catch (err) {
+        console.error('❌ Error al crear préstamo:', err);
+        res.status(500).json({ success: false, error: 'Error al crear préstamo: ' + err.message });
+    }
 });
 
-// Editar un préstamo existente
-app.put('/api/prestamo/:id', (req, res) => {
-    console.log('📦 PUT /api/prestamo/:id - Params:', req.params, 'Body:', req.body);
+// FINALIZAR préstamo (transacción: estado + fecha_entrega + liberar materiales)
+app.post('/api/prestamo/:id/finalizar', async (req, res) => {
+    const { id } = req.params;
+    const { observaciones } = req.body;
 
+    try {
+        // Actualizar préstamo
+        await query("UPDATE prestamo SET estado_general = 'Finalizado', fecha_entrega = CURDATE(), observaciones = ? WHERE id = ?",
+            [observaciones || '', id]);
+
+        // Actualizar detalle
+        await query("UPDATE detalle_prestamo SET fecha_entrega_real = NOW() WHERE prestamo_id = ?", [id]);
+
+        // Liberar materiales
+        await query(`UPDATE material SET disponible = 1 WHERE id IN (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ?)`, [id]);
+
+        res.json({ success: true, mensaje: 'Préstamo finalizado correctamente' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al finalizar préstamo' });
+    }
+});
+
+// RENOVAR préstamo (agregar N días a fecha_limite)
+app.put('/api/prestamo/:id/renovar', async (req, res) => {
+    const { id } = req.params;
+    const { dias } = req.body;
+
+    if (!dias || dias < 1) {
+        return res.status(400).json({ success: false, message: 'Debes indicar cuántos días renovar (mínimo 1)' });
+    }
+
+    try {
+        await query(
+            "UPDATE prestamo SET fecha_limite = DATE_ADD(fecha_limite, INTERVAL ? DAY), estado_general = 'Renovado' WHERE id = ?",
+            [dias, id]
+        );
+        res.json({ success: true, mensaje: `Préstamo renovado (+${dias} días)` });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al renovar préstamo' });
+    }
+});
+
+// CAMBIAR ESTADO de préstamo
+app.put('/api/prestamo/:id/estado', async (req, res) => {
+    const { id } = req.params;
+    const { estado_general } = req.body;
+
+    try {
+        await query('UPDATE prestamo SET estado_general = ? WHERE id = ?', [estado_general, id]);
+
+        // Si se finaliza/cancela/devuelve, liberar materiales
+        if (['Finalizado', 'Cancelado', 'Devuelto', 'Entregado', 'Denegado', 'Cerrado'].includes(estado_general)) {
+            await query(`UPDATE material SET disponible = 1 WHERE id IN (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ?)`, [id]);
+            if (estado_general === 'Finalizado' || estado_general === 'Entregado' || estado_general === 'Devuelto') {
+                await query("UPDATE prestamo SET fecha_entrega = CURDATE() WHERE id = ? AND fecha_entrega IS NULL", [id]);
+            }
+        }
+        // Si se activa/presta, marcar materiales como ocupados
+        if (['Activo', 'Abierto'].includes(estado_general)) {
+            await query(`UPDATE material SET disponible = 0 WHERE id IN (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ?)`, [id]);
+        }
+
+        res.json({ success: true, mensaje: `Estado cambiado a: ${estado_general}` });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al cambiar estado' });
+    }
+});
+
+// EDITAR préstamo (observaciones, estado general, etc.)
+app.put('/api/prestamo/:id', async (req, res) => {
     const { id } = req.params;
     const { estado_general, estado_devolucion, fecha_entrega_real, observaciones } = req.body;
 
-    // Actualizar tabla prestamo
-    const queryPrestamo = `UPDATE prestamo SET estado_general = ?, observaciones = ? WHERE id = ?`;
+    try {
+        await query('UPDATE prestamo SET estado_general = ?, observaciones = ? WHERE id = ?',
+            [estado_general, observaciones, id]);
 
-    connection.query(queryPrestamo, [estado_general, observaciones, id], (err) => {
-        if (err) {
-            console.error('❌ Error:', err);
-            return res.status(500).json({ success: false, error: 'Error al editar préstamo' });
+        if (estado_devolucion) {
+            const fechaEntrega = fecha_entrega_real || null;
+            await query('UPDATE detalle_prestamo SET estado_devolucion = ?, fecha_entrega_real = ? WHERE prestamo_id = ?',
+                [estado_devolucion, fechaEntrega, id]);
         }
 
-        // Actualizar tabla detalle_prestamo
-        const queryDetalle = `UPDATE detalle_prestamo SET estado_devolucion = ?, fecha_entrega_real = ? WHERE prestamo_id = ?`;
-        const fechaEntrega = fecha_entrega_real || null;
+        // Si estado finaliza, liberar materiales
+        if (['Finalizado', 'Cancelado', 'Devuelto', 'Entregado', 'Cerrado'].includes(estado_general)) {
+            await query(`UPDATE material SET disponible = 1 WHERE id IN (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ?)`, [id]);
+        }
 
-        connection.query(queryDetalle, [estado_devolucion, fechaEntrega, id], (err2) => {
-            if (err2) {
-                console.error('❌ Error detalle:', err2);
-                return res.status(500).json({ success: false, error: 'Error al editar detalle' });
-            }
-
-            // Si el estado de devolución es "Entregado", liberar el material
-            if (estado_devolucion === 'Entregado') {
-                connection.query(
-                    `UPDATE material SET disponible = 'Libre' WHERE id = (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ? LIMIT 1)`,
-                    [id],
-                    () => {} // fire and forget
-                );
-            }
-
-            res.json({ success: true, mensaje: 'Préstamo actualizado' });
-        });
-    });
+        res.json({ success: true, mensaje: 'Préstamo actualizado' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al editar préstamo' });
+    }
 });
 
-// Eliminar un préstamo
-app.delete('/api/prestamo/:id', (req, res) => {
-    console.log('📦 DELETE /api/prestamo/:id - Params:', req.params);
+// ELIMINAR préstamo
+app.delete('/api/prestamo/:id', async (req, res) => {
     const { id } = req.params;
 
-    // Primero liberar el material
-    connection.query(
-        `UPDATE material SET disponible = 'Libre' WHERE id = (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ? LIMIT 1)`,
-        [id],
-        () => {
-            // Luego eliminar detalle
-            connection.query(`DELETE FROM detalle_prestamo WHERE prestamo_id = ?`, [id], (err) => {
-                if (err) {
-                    console.error('❌ Error:', err);
-                    return res.status(500).json({ success: false, error: 'Error al eliminar detalle' });
-                }
+    try {
+        // Liberar materiales
+        await query(`UPDATE material SET disponible = 1 WHERE id IN (SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ?)`, [id]);
+        // Eliminar detalles
+        await query('DELETE FROM detalle_prestamo WHERE prestamo_id = ?', [id]);
+        // Eliminar préstamo
+        const result = await query('DELETE FROM prestamo WHERE id = ?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Préstamo no encontrado' });
+        res.json({ success: true, mensaje: 'Préstamo eliminado' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al eliminar préstamo' });
+    }
+});
 
-                // Finalmente eliminar préstamo
-                connection.query(`DELETE FROM prestamo WHERE id = ?`, [id], (err2, result) => {
-                    if (err2) {
-                        console.error('❌ Error:', err2);
-                        return res.status(500).json({ success: false, error: 'Error al eliminar préstamo' });
-                    }
-                    if (result.affectedRows === 0) {
-                        return res.status(404).json({ success: false, error: 'Préstamo no encontrado' });
-                    }
-                    res.json({ success: true, mensaje: 'Préstamo eliminado' });
-                });
-            });
-        }
-    );
+// SANCIONAR usuario desde préstamo
+app.post('/api/prestamo/:id/sancionar', async (req, res) => {
+    const { id } = req.params;
+    const { motivo } = req.body;
+
+    try {
+        const prestamo = await query('SELECT usuario_id FROM prestamo WHERE id = ?', [id]);
+        if (prestamo.length === 0) return res.status(404).json({ success: false, error: 'Préstamo no encontrado' });
+
+        await query("UPDATE usuario SET estatus = 'Sancionado', motivo_sancion = ? WHERE id = ?",
+            [motivo || 'Sancionado por incumplimiento de préstamo', prestamo[0].usuario_id]);
+        res.json({ success: true, mensaje: 'Usuario sancionado desde préstamo' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al sancionar' });
+    }
+});
+
+// ========================================================
+// ============ CRUD DE DISCIPLINAS ============
+// ========================================================
+
+// LISTAR disciplinas (con entrenador)
+app.get('/api/disciplina', async (req, res) => {
+    try {
+        const results = await query(`
+            SELECT d.id, d.nombre, d.entrenador_id, 
+                   IFNULL(CONCAT(u.nombre, ' ', u.apellidos), 'Sin asignar') AS entrenador_nombre
+            FROM disciplina d
+            LEFT JOIN usuario u ON d.entrenador_id = u.id
+        `);
+        res.json({ success: true, disciplinas: results });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar disciplinas' });
+    }
+});
+
+// CREAR disciplina
+app.post('/api/disciplina', async (req, res) => {
+    const { nombre, entrenador_id } = req.body;
+    if (!nombre) return res.status(400).json({ success: false, error: 'Nombre es obligatorio' });
+
+    try {
+        const result = await query('INSERT INTO disciplina (nombre, entrenador_id) VALUES (?, ?)',
+            [nombre, entrenador_id || null]);
+        res.json({ success: true, mensaje: 'Disciplina creada', id: result.insertId });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al crear disciplina: ' + err.message });
+    }
+});
+
+// ELIMINAR disciplina
+app.delete('/api/disciplina/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await query('DELETE FROM disciplina WHERE id = ?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Disciplina no encontrada' });
+        res.json({ success: true, mensaje: 'Disciplina eliminada' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al eliminar disciplina' });
+    }
+});
+
+// ========================================================
+// ============ GESTIÓN DE ENTRENADORES ============
+// ========================================================
+
+// LISTAR entrenadores (usuarios con rol Docente)
+app.get('/api/entrenador', async (req, res) => {
+    try {
+        const results = await query("SELECT id, nombre, apellidos, email, identificador FROM usuario WHERE rol = 'Docente'");
+        res.json({ success: true, entrenadores: results });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar entrenadores' });
+    }
+});
+
+// CANDIDATOS a entrenador (usuarios que NO son Docente ni Admin)
+app.get('/api/entrenador/candidatos', async (req, res) => {
+    try {
+        const results = await query("SELECT id, nombre, apellidos, email, identificador, rol FROM usuario WHERE rol NOT IN ('Docente', 'Admin', 'Operador')");
+        res.json({ success: true, candidatos: results });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al consultar candidatos' });
+    }
+});
+
+// PROMOVER a entrenador
+app.put('/api/entrenador/promover/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await query("UPDATE usuario SET rol = 'Docente' WHERE id = ?", [id]);
+        res.json({ success: true, mensaje: 'Usuario promovido a Entrenador' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al promover' });
+    }
+});
+
+// REMOVER entrenador
+app.put('/api/entrenador/remover/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Quitar de disciplinas asignadas
+        await query('UPDATE disciplina SET entrenador_id = NULL WHERE entrenador_id = ?', [id]);
+        await query("UPDATE usuario SET rol = 'Alumno' WHERE id = ?", [id]);
+        res.json({ success: true, mensaje: 'Entrenador removido, ahora es Alumno' });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al remover entrenador' });
+    }
+});
+
+// ========================================================
+// ============ PERFIL ============
+// ========================================================
+
+// Historial de préstamos del usuario
+app.get('/api/perfil/:userId/prestamos', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const results = await query(`
+            SELECT p.id, p.fecha_solicitud, p.fecha_limite, p.estado_general,
+                   GROUP_CONCAT(m.nombre SEPARATOR ', ') AS materiales
+            FROM prestamo p
+            LEFT JOIN detalle_prestamo dp ON dp.prestamo_id = p.id
+            LEFT JOIN material m ON dp.material_id = m.id
+            WHERE p.usuario_id = ?
+            GROUP BY p.id
+            ORDER BY p.id DESC LIMIT 10
+        `, [userId]);
+        res.json({ success: true, prestamos: results });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al obtener historial' });
+    }
+});
+
+// ESTADÍSTICAS generales (para dashboard admin)
+app.get('/api/estadisticas', async (req, res) => {
+    try {
+        const users = await query("SELECT COUNT(*) AS total, SUM(CASE WHEN estatus='Activo' THEN 1 ELSE 0 END) AS activos FROM usuario");
+        const mats = await query("SELECT COUNT(*) AS total, SUM(CASE WHEN disponible=1 THEN 1 ELSE 0 END) AS disponibles FROM material");
+        const prests = await query(`
+            SELECT COUNT(*) AS total,
+                SUM(CASE WHEN estado_general IN ('Abierto','Activo','Renovado') THEN 1 ELSE 0 END) AS activos,
+                SUM(CASE WHEN estado_general IN ('Abierto','Activo','Renovado') AND fecha_limite < NOW() THEN 1 ELSE 0 END) AS vencidos
+            FROM prestamo
+        `);
+        res.json({
+            success: true,
+            usuarios: { total: users[0].total, activos: users[0].activos },
+            materiales: { total: mats[0].total, disponibles: mats[0].disponibles },
+            prestamos: { total: prests[0].total, activos: prests[0].activos, vencidos: prests[0].vencidos }
+        });
+    } catch (err) {
+        console.error('❌ Error:', err);
+        res.status(500).json({ success: false, error: 'Error al obtener estadísticas' });
+    }
 });
 
 // ============ ARCHIVOS ESTÁTICOS ============
-// (DESPUÉS de todas las rutas API)
 app.use(express.static(path.join(__dirname, '..')));
 
-// Ruta principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
@@ -543,10 +753,17 @@ app.listen(PORT, () => {
     console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📁 Sirviendo archivos desde: ${path.join(__dirname, '..')}`);
     console.log('\n📡 Rutas API disponibles:');
-    console.log('   GET  /api/test');
     console.log('   POST /api/login');
-    console.log('   POST /api/usuario');
-    console.log('   GET  /api/consultar/articulo');
-    console.log('   POST /api/articulo\n');
-});     
-
+    console.log('   POST /api/usuario | GET /api/usuario | PUT /api/usuario/:id | DELETE /api/usuario/:id');
+    console.log('   PUT  /api/usuario/:id/estatus | PUT /api/usuario/:id/sancionar');
+    console.log('   POST /api/articulo | PUT /api/articulo/:id | DELETE /api/articulo/:id');
+    console.log('   GET  /api/consultar/articulo | GET /api/articulo/disponibles | GET /api/totalArt');
+    console.log('   GET  /api/prestamo | POST /api/prestamo | PUT /api/prestamo/:id | DELETE /api/prestamo/:id');
+    console.log('   GET  /api/prestamo/stats | GET /api/prestamo/:id/detalle');
+    console.log('   POST /api/prestamo/:id/finalizar | PUT /api/prestamo/:id/renovar | PUT /api/prestamo/:id/estado');
+    console.log('   POST /api/prestamo/:id/sancionar');
+    console.log('   GET  /api/disciplina | POST /api/disciplina | DELETE /api/disciplina/:id');
+    console.log('   GET  /api/entrenador | GET /api/entrenador/candidatos');
+    console.log('   PUT  /api/entrenador/promover/:id | PUT /api/entrenador/remover/:id');
+    console.log('   GET  /api/perfil/:userId/prestamos | GET /api/estadisticas\n');
+});

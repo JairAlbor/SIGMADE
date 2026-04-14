@@ -5,13 +5,15 @@ const apiTest = "http://localhost:3001/api/total";
 
 
 window.addEventListener('DOMContentLoaded', function() {
-    cargarArticulos();
-    contarTotalMateriales();
-    contarDisponibles();
-    contarTotalUsuarios();
-    
-  //  contarDisponibles(); // Llamamos a la función para contar disponibles al cargar la página
-    // Puedes agregar todas las que quieras
+    // Solo ejecutar funciones de catálogo si estamos en catalogo.html
+    if (document.getElementById('tabla-cuerpo')) {
+        cargarArticulos();
+        contarTotalMateriales();
+        contarDisponibles();
+    }
+    if (document.getElementById('totalUser')) {
+        contarTotalUsuarios();
+    }
 });
 
 
@@ -52,7 +54,7 @@ async function guardarUsuario() {
 
     if (resultado.success) {
       alert("✅ Usuario registrado con éxito");
-      e.target.reset(); // Limpia el formulario
+      document.getElementById('formUsuarios').reset();
     } else {
       alert("❌ Error: " + resultado.message);
     }
@@ -79,15 +81,17 @@ async function loginUsuario() {
         const data = await response.json();
 
         if (data.success) {
-            const usuarioInfo={
+            const usuarioInfo = {
+                id: data.user.id,
+                identificador: data.user.identificador,
                 nombre: data.user.nombre,
                 apellidos: data.user.apellidos,
                 email: data.user.email,
                 telefono: data.user.telefono,
                 rol: data.user.rol,
                 estatus: data.user.estatus,
-                create_at: data.user.create_at,
-                frecuencia: data.user.frecuencia
+                create_at: data.user.created_at,
+                frecuencia: data.user.es_frecuente
             }
 
             // Guardar la información del usuario en localStorage para covertilo en texto JSON
@@ -95,14 +99,13 @@ async function loginUsuario() {
 
             // Guardar info básica si es necesario y redirigir
           console.log('Usuario logueado:', data.user.nombre);
-            if (data.user.rol === 'Admin') {
+            if (data.user.rol === 'Admin' || data.user.rol === 'Operador') {
                 window.location.href = './administracion.html'; 
             } else {
                 window.location.href = './Dashboard.html'; 
             }
-              document.getElementById('userName').textContent = `Hola, ${nombre}`;
         } else {
-            console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
+            alert('❌ ' + data.message);
         }
     } catch (error) {
         console.error('Error de conexión:', error);
@@ -159,7 +162,7 @@ function cargarArticulos() {
             <td>${articulo.nombre_disciplina}</span></td>
             <td>${articulo.tipoMaterial}</td>
             <td>${articulo.estado}</td>
-            <td class="text-green">${articulo.disponible || 0}</td>
+            <td class="text-green">${articulo.disponible == 1 ? 'Sí' : 'No'}</td>
             <td class="actions">
                 <button class="btn-icon edit" onclick="editarMaterial(${articulo.id})">
                     <i class="fa-regular fa-pen-to-square"></i>
