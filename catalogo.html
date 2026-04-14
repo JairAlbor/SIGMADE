@@ -144,23 +144,8 @@
     <script>
       lucide.createIcons();
     </script>
+    <script src="nav-utils.js"></script>
     <script src="modal-js/modal-catalogo.js"></script>
-    <script>
-      // Función compartida para redirigir al inicio correcto según rol
-      function irAInicio() {
-        const info = localStorage.getItem('usuarioInfo');
-        if (info) {
-          const usuario = JSON.parse(info);
-          if (usuario.rol === 'Admin') {
-            window.location.href = 'administracion.html';
-          } else {
-            window.location.href = 'Dashboard.html';
-          }
-        } else {
-          window.location.href = 'index.html';
-        }
-      }
-    </script>
     <script src="app.js"></script>
   </body>
 </html>
