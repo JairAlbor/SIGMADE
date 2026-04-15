@@ -262,13 +262,48 @@ app.post('/api/articulo', async (req, res) => {
 // ELIMINAR material
 app.delete('/api/articulo/:id', async (req, res) => {
     const { id } = req.params;
+    const forzar = req.query.forzar === 'true'; // ?forzar=true para eliminar con historial
+
     try {
+        // Verificar si el material está referenciado en detalle_prestamo
+        const refs = await query(
+            'SELECT COUNT(*) AS total FROM detalle_prestamo WHERE material_id = ?', [id]
+        );
+
+        if (refs[0].total > 0 && !forzar) {
+            // Verificar si tiene préstamos ACTIVOS (no cerrados)
+            const activos = await query(
+                `SELECT COUNT(*) AS total FROM detalle_prestamo dp 
+                 JOIN prestamo p ON dp.prestamo_id = p.id 
+                 WHERE dp.material_id = ? AND p.estado_general IN ('Pendiente','Abierto','Activo','Renovado')`, [id]
+            );
+
+            if (activos[0].total > 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: `No se puede eliminar: este material tiene ${activos[0].total} préstamo(s) activo(s). Finaliza los préstamos primero.`
+                });
+            }
+
+            // Tiene historial pero no préstamos activos — pedir confirmación
+            return res.status(409).json({
+                success: false,
+                requiereForzar: true,
+                error: `Este material tiene ${refs[0].total} registro(s) en el historial de préstamos. ¿Deseas eliminarlo junto con su historial?`
+            });
+        }
+
+        // Si forzar=true, eliminar primero los registros de detalle_prestamo
+        if (forzar && refs[0].total > 0) {
+            await query('DELETE FROM detalle_prestamo WHERE material_id = ?', [id]);
+        }
+
         const result = await query('DELETE FROM material WHERE id = ?', [id]);
         if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Artículo no encontrado' });
-        res.json({ success: true, mensaje: 'Artículo eliminado' });
+        res.json({ success: true, mensaje: 'Artículo eliminado correctamente' });
     } catch (err) {
-        console.error('❌ Error:', err);
-        res.status(500).json({ success: false, error: 'Error al eliminar artículo' });
+        console.error('❌ Error al eliminar material:', err.message);
+        res.status(500).json({ success: false, error: 'Error interno del servidor: ' + err.message });
     }
 });
 

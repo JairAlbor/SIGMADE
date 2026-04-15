@@ -238,66 +238,99 @@ function contarDisponibles() {
 }
 
 //funcion para editar material
-function editarMaterial(id) {
-  // Aquí podrías abrir un modal o redirigir a una página de edición
-//aun falta hacer un modal que pida la informacion nueva del articulo, pero en teoria con esto de manera
-//provicional ya podra actualizar
-  const nuevoNombre = prompt("Ingrese el nuevo nombre del artículo:");
-  const nuevaDisciplina = prompt("Ingrese la nueva disciplina:");
-  const nuevoEstado = prompt("Ingrese el nuevo estado:");
-  const nuevaDisponibilidad = prompt("¿Está disponible? (Sí/No)");
+window.editarMaterial = async function(id) {
+  // Obtenemos disciplinas primero para mostrar opciones al usuario
+  let disciplinas = [];
+  try {
+      const res = await fetch('http://localhost:3001/api/disciplina');
+      const dData = await res.json();
+      if(dData.success) disciplinas = dData.disciplinas;
+  } catch(e) {
+      console.error("No se pudieron cargar disciplinas:", e);
+  }
 
-  if (nuevoNombre && nuevaDisciplina && nuevoEstado && nuevaDisponibilidad) {
-    fetch(`/api/articulo/${id}`, {
+  const nuevoNombre = prompt("Ingrese el nuevo nombre del artículo:");
+  if (!nuevoNombre) return;
+
+  let optsDisciplina = disciplinas.map(d => `${d.id}=${d.nombre}`).join(", ");
+  const nuevaDisciplinaStr = prompt(`Ingrese el ID de la nueva disciplina (${optsDisciplina || 'No se pudieron cargar'}):`);
+  const nuevaDisciplina = parseInt(nuevaDisciplinaStr);
+  if (isNaN(nuevaDisciplina)) {
+      alert("Error: Debes ingresar el número ID de la disciplina.");
+      return;
+  }
+
+  const nuevoEstado = prompt("Ingrese el nuevo estado (Nuevo, Bueno, Malo):");
+  if (!nuevoEstado) return;
+
+  const nuevaDisponibilidad = prompt("¿Está disponible? (Sí/No):");
+  if (!nuevaDisponibilidad) return;
+
+  try {
+    const response = await fetch(`http://localhost:3001/api/articulo/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         nombre: nuevoNombre,
         disciplina: nuevaDisciplina,
         estado: nuevoEstado,
-        disponible: nuevaDisponibilidad.toLowerCase() === "sí" ? 1 : 0,
+        disponible: (nuevaDisponibilidad.toLowerCase() === "sí" || nuevaDisponibilidad.toLowerCase() === "si") ? 1 : 0,
       }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          alert("Artículo editado correctamente");
-          cargarArticulos(); // Refrescar la lista después de editar
-          contarDisponibles(); // Actualizar disponibles después de editar
-        } else {  
-          alert("Error al editar el artículo: " + data.error);
-        }
-      })
-      .catch((error) => {
-        console.error("Error de conexión:", error);
-        alert("Error al conectar con el servidor");
-      }
-    );
-  } else {
-    alert("Todos los campos son obligatorios para editar el artículo.");
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      alert("✅ Artículo editado correctamente");
+      cargarArticulos();
+      contarTotalMateriales();
+      contarDisponibles();
+    } else {
+      alert("❌ Error al editar el artículo: " + data.error);
+    }
+  } catch (error) {
+    console.error("Error de conexión:", error);
+    alert("Error al conectar con el servidor backend");
   }
 }
 
 //funcion para eliminar material
-function eliminarMaterial(id) {
-  if (confirm("¿Estás seguro de eliminar este material?")) {
-    fetch(`/api/articulo/${id}`, {  
-      method: "DELETE",
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          alert("Artículo eliminado correctamente");
-          cargarArticulos(); // Refrescar la lista después de eliminar
-          contarTotalMateriales(); // Actualizar el total después de eliminar
-       //   contarDisponibles(); // Actualizar disponibles después de eliminar
+window.eliminarMaterial = async function(id) {
+  if (!confirm("¿Estás seguro de eliminar este material?")) return;
+
+  try {
+    const response = await fetch(`http://localhost:3001/api/articulo/${id}`, { method: "DELETE" });
+    const data = await response.json();
+
+    if (data.success) {
+      alert("✅ Artículo eliminado correctamente");
+      cargarArticulos();
+      contarTotalMateriales();
+      contarDisponibles();
+      return;
+    }
+
+    // Si el backend pide confirmación para forzar (tiene historial pero no préstamos activos)
+    if (data.requiereForzar) {
+      if (confirm(data.error + "\n\nPresiona Aceptar para eliminar definitivamente.")) {
+        const res2 = await fetch(`http://localhost:3001/api/articulo/${id}?forzar=true`, { method: "DELETE" });
+        const data2 = await res2.json();
+        if (data2.success) {
+          alert("✅ Artículo y su historial eliminados correctamente");
+          cargarArticulos();
+          contarTotalMateriales();
+          contarDisponibles();
         } else {
-          alert("Error al eliminar el artículo: " + data.error);
-        } 
-      })
-      .catch((error) => {
-        console.error("Error de conexión:", error);
-        alert("Error al conectar con el servidor");
-      });
+          alert("❌ " + data2.error);
+        }
+      }
+      return;
+    }
+
+    // Cualquier otro error (préstamos activos, etc.)
+    alert("❌ " + data.error);
+
+  } catch (error) {
+    console.error("Error de conexión:", error);
+    alert("Error al conectar con el servidor API");
   }
 }

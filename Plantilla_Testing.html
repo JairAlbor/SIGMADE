@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plantilla de Prueba - SIGMADE</title>
+    <style>
+        /* Estilos generales y para impresión A4 */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 10pt;
+            margin: 0;
+            padding: 0;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            color: #333;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm 20mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* Encabezado SIGMADE - Color Guinda */
+        .doc-header {
+            background-color: #6a1b31; /* Color guinda institucional */
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: 25px;
+            border-bottom: 5px solid #a3224b;
+        }
+
+        .doc-header h1 {
+            margin: 0;
+            font-size: 16pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .doc-header .logo {
+            font-size: 12pt;
+            font-weight: bold;
+            opacity: 0.9;
+        }
+
+        /* Estilos de tabla generales */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+
+        /* Bordes modernos y sutiles */
+        th, td {
+            border: 1px solid #c2c9d1;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .bold-label {
+            font-weight: 600;
+            background-color: #f7f9fc;
+            color: #4a5568;
+        }
+
+        /* Cabeceras de columnas */
+        th {
+            background-color: #6a1b31;
+            color: white;
+            font-weight: 600;
+            border: 1px solid #4d1323;
+        }
+
+        /* Centrar texto en cabeceras de sección separadoras (rojas) */
+        .section-header {
+            text-align: center;
+            font-weight: bold;
+            background-color: #e2e8f0;
+            color: #2d3748;
+            font-size: 11pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px;
+        }
+
+        /* Alturas específicas para las celdas grandes */
+        .tall-cell { height: 50px; }
+        .huge-cell { height: 90px; }
+
+        /* Firmas */
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding: 0 20px;
+        }
+
+        .sign-box {
+            text-align: center;
+            font-size: 10pt;
+            font-weight: bold;
+            width: 180px;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            color: #2d3748;
+        }
+
+        /* Configuración para Imprimir */
+        @media print {
+            body { background: none; }
+            .page {
+                margin: 0;
+                padding: 10mm;
+                box-shadow: none;
+                width: 100%;
+            }
+            .doc-header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            th, .bold-label, .section-header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            th, td { border: 1px solid #666; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <!-- HEADER INSTITUCIONAL -->
+        <div class="doc-header">
+            <h1>Caso de Prueba de Software</h1>
+            <div class="logo">SIGMADE | UTM</div>
+        </div>
+
+        <!-- TABLA 1: INFO GENERAL -->
+        <table>
+            <tr>
+                <td style="width: 20%;" class="bold-label">Nombre del módulo:</td>
+                <td style="width: 30%;"></td>
+                <td style="width: 20%;" class="bold-label">Entorno de prueba:</td>
+                <td style="width: 30%;"></td>
+            </tr>
+            <tr>
+                <td class="bold-label">Ciclo de lanzamiento:</td>
+                <td></td>
+                <td class="bold-label">Fecha de ejecución:</td>
+                <td></td>
+            </tr>
+        </table>
+
+        <!-- TABLA 2: ROLES -->
+        <table>
+            <tr>
+                <td style="width: 33.33%;" class="bold-label">Prueba diseñada por:</td>
+                <td style="width: 33.33%;" class="bold-label">Prueba revisada por:</td>
+                <td style="width: 33.33%;" class="bold-label">Prueba ejecutada por:</td>
+            </tr>
+            <tr>
+                <td style="height: 25px;"></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+
+        <!-- TABLA 3: DETALLES DEL CASO -->
+        <table>
+            <tr>
+                <td colspan="2" class="section-header">Detalles del Caso de Prueba</td>
+            </tr>
+            <tr>
+                <td style="width: 20%;" class="bold-label">ID del caso</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="bold-label">Descripción</td>
+                <td class="tall-cell"></td>
+            </tr>
+            <tr>
+                <td class="bold-label">Requisitos previos</td>
+                <td class="tall-cell"></td>
+            </tr>
+        </table>
+
+        <!-- TABLA 4: PASOS DE PRUEBA -->
+        <table>
+            <tr>
+                <td colspan="5" class="section-header">Pasos de la Prueba</td>
+            </tr>
+            <tr>
+                <th style="width: 5%; text-align: center;">N°</th>
+                <th style="width: 35%; text-align: center;">Paso / Acción</th>
+                <th style="width: 25%; text-align: center;">Resultado Esperado</th>
+                <th style="width: 25%; text-align: center;">Resultado Obtenido</th>
+                <th style="width: 10%; text-align: center;">Estado</th>
+            </tr>
+            <!-- Filas -->
+            <tr><td style="text-align: center;">1</td><td style="height:30px;"></td><td></td><td></td><td></td></tr>
+            <tr><td style="text-align: center;">2</td><td style="height:30px;"></td><td></td><td></td><td></td></tr>
+            <tr><td style="text-align: center;">3</td><td style="height:30px;"></td><td></td><td></td><td></td></tr>
+            <tr><td style="text-align: center;">4</td><td style="height:30px;"></td><td></td><td></td><td></td></tr>
+            <tr><td style="text-align: center;">5</td><td style="height:30px;"></td><td></td><td></td><td></td></tr>
+            <tr><td style="text-align: center;">6</td><td style="height:30px;"></td><td></td><td></td><td></td></tr>
+            <tr><td style="text-align: center;">7</td><td style="height:30px;"></td><td></td><td></td><td></td></tr>
+            <tr><td style="text-align: center;">8</td><td style="height:30px;"></td><td></td><td></td><td></td></tr>
+        </table>
+
+        <!-- TABLA 5: CIERRE -->
+        <table>
+            <tr>
+                <td colspan="4" class="section-header">Cierre y Observaciones</td>
+            </tr>
+            <tr>
+                <td style="width: 15%;" class="bold-label">Resultado Final:</td>
+                <td style="width: 35%;">[&nbsp;&nbsp;] Aprobado &nbsp;&nbsp;&nbsp; [&nbsp;&nbsp;] Fallido</td>
+                <td style="width: 20%;" class="bold-label">Severidad (si falló):</td>
+                <td style="width: 30%;"></td>
+            </tr>
+            <tr>
+                <td colspan="4" class="bold-label" style="border-bottom: none;">Comentarios / Observaciones Adicionales:</td>
+            </tr>
+            <tr>
+                <td colspan="4" class="huge-cell" style="border-top: none;"></td>
+            </tr>
+        </table>
+
+        <!-- FIRMAS -->
+        <br>
+        <div class="signatures">
+            <div class="sign-box">Firma Diseñador</div>
+            <div class="sign-box">Firma Revisor</div>
+            <div class="sign-box">Firma Ejecutor</div>
+        </div>
+
+    </div>
+
+</body>
+</html>
