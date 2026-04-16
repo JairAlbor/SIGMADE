@@ -11,9 +11,18 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "mysql2": "^3.18.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JairAlbor/SIGMADE.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JairAlbor/SIGMADE/issues"
+  },
+  "homepage": "https://github.com/JairAlbor/SIGMADE#readme"
 }

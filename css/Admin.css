@@ -14,17 +14,26 @@
     padding: 20px 0;
 }
 
-/* Tarjeta Principal (Azul/Verde) */
 .card-featured {
     flex: 1.2; /* Un poco más ancha que las otras */
     background-color: #007bff; /* Cambia al color exacto que prefieras */
     color: white;
+    font-family: inherit;
+    border: none;
+    text-align: left;
     border-radius: 20px;
     padding: 30px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.card-featured:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 /* Rejilla de los botones pequeños (derecha) */
@@ -99,4 +108,630 @@
     border-radius: 10px;
     margin-bottom: 10px;
     font-size: 0.9rem;
+}
+
+
+/* Estilos para el modal de eventos */
+/* --- VARIABLES Y RESET --- */
+:root {
+    --guinda: #6d2d3b;
+    --guinda-hover: #5a2531;
+    --azul-fondo: #eff6ff;
+    --azul-borde: #bfdbfe;
+    --blanco: #ffffff;
+    --gris-oscuro: #374151;
+    --sombra: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.hidden { display: none !important; }
+
+/* --- CONTENEDOR PADRE (OVERLAY) --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px); /* Efecto cristal al fondo */
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* --- CUERPO DEL MODAL (CENTRADO) --- */
+.modal-content {
+    background: var(--blanco);
+    width: 95%;
+    max-width: 1000px; /* Ajustable según el contenido */
+    max-height: 85vh;
+    border-radius: 20px;
+    box-shadow: var(--sombra);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- HEADER DEL MODAL --- */
+.modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--blanco);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+/* --- CUERPO SCROLLABLE --- */
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    background-color: #fcfcfc;
+}
+
+/* --- FORMULARIOS (NUEVO EVENTO/DISCIPLINA) --- */
+.add-form-container {
+    background-color: var(--azul-fondo);
+    border: 1px solid var(--azul-borde);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.form-row input, 
+.form-row textarea {
+    padding: 0.6rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+/* --- GRIDS DE CONTENIDO (TARJETAS) --- */
+.disciplines-grid, .event-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+/* --- TARJETAS (ESTILO UNIFICADO) --- */
+.card-item {
+    background: var(--blanco);
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.card-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+}
+
+/* --- BOTONES --- */
+.btn-guinda {
+    background-color: var(--guinda);
+    color: var(--blanco);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.2s;
+}
+
+.btn-guinda:hover { background-color: var(--guinda-hover); }
+
+.btn-secondary {
+    background-color: #4b5563;
+    color: var(--blanco);
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+/* --- FOOTER --- */
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* --- ANIMACIONES --- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* --- NUEVOS ESTILOS PARA KPI Y TABLA (INTEGRADOS) --- */
+
+/* Contenedor de búsqueda */
+.search-bar-container {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.search-bar-container input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.95rem;
+}
+
+/* Rejilla de indicadores (KPIs) */
+.stats-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.stat-summary-card {
+    padding: 1.5rem;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+/* Variantes de color basadas en tu imagen */
+.stat-summary-card.active { background-color: #f0fff4; border-color: #c6f6d5; color: #2f855a; }
+.stat-summary-card.inactive { background-color: #f7fafc; border-color: #edf2f7; color: #718096; }
+.stat-summary-card.total { background-color: #eff6ff; border-color: #bfdbfe; color: #2563eb; }
+
+.stat-summary-card .number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stat-summary-card .label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+/* Estilos de la Tabla */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 0.95rem;
+}
+
+.custom-table th {
+    background-color: #f9fafb;
+    padding: 1rem;
+    text-align: left;
+    color: #4b5563;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.custom-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #1f2937;
+}
+
+/* Badge de estado dentro de tabla */
+.status-pill {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.status-pill.active { background-color: #dcfce7; color: #15803d; }
+.status-pill.inactive { background-color: #f3f4f6; color: #4b5563; }
+
+.view-profile-link {
+    color: var(--guinda);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.view-profile-link:hover { text-decoration: underline; }
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+.btn-icon.edit { color: #2d3e50; }
+.btn-icon.delete { color: #a04444; }
+
+.btn-icon:hover {
+    opacity: 0.7;
+}
+
+/* ====================================================
+   ESTILOS PARA MODAL DE PRÉSTAMOS (CRUD)
+   ==================================================== */
+
+/* Modal ancho para préstamos */
+.modal-content-wide {
+    max-width: 1300px;
+}
+
+/* KPI Cards - Variantes de préstamos */
+.stat-summary-card.prestamo-abierto {
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
+}
+
+.stat-summary-card.prestamo-retraso {
+    background-color: #fffbeb;
+    border-color: #fde68a;
+    color: #d97706;
+}
+
+.stat-summary-card.prestamo-cerrado {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #16a34a;
+}
+
+.stat-summary-card i {
+    margin-right: 4px;
+}
+
+/* --- STATUS PILLS (estados de préstamo) --- */
+.prestamo-pill-abierto {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+.prestamo-pill-pendiente {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+.prestamo-pill-retraso {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.prestamo-pill-cerrado {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.prestamo-pill-entregado {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.prestamo-pill-danado {
+    background-color: #fce7f3;
+    color: #be185d;
+}
+
+.prestamo-pill-perdido {
+    background-color: #fecaca;
+    color: #991b1b;
+}
+
+.prestamo-pill-cancelado {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* --- CELDA DE USUARIO EN TABLA --- */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-cell-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3b82f6;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.user-cell-name {
+    display: block;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.9rem;
+}
+
+.user-cell-id {
+    display: block;
+    font-size: 0.78rem;
+    color: #9ca3af;
+}
+
+/* --- TAG DE MATERIAL --- */
+.material-tag {
+    background: #f3f4f6;
+    color: #374151;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* --- FORMULARIO DE NUEVO PRÉSTAMO --- */
+.form-grid-prestamo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-field select,
+.form-field input,
+.form-field textarea {
+    padding: 0.6rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.form-field select:focus,
+.form-field input:focus,
+.form-field textarea:focus {
+    outline: none;
+    border-color: var(--guinda);
+    box-shadow: 0 0 0 3px rgba(109, 45, 59, 0.1);
+}
+
+.form-actions-prestamo {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.btn-cancel {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #f3f4f6;
+}
+
+.btn-save {
+    background: var(--guinda);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-save:hover {
+    background: var(--guinda-hover);
+}
+
+/* Close modal button */
+.close-modal-btn {
+    background: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.close-modal-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+/* Hover en filas de tabla */
+.custom-table tbody tr {
+    transition: background-color 0.15s;
+}
+
+.custom-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Form grid for events */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.form-grid input,
+.form-grid textarea {
+    padding: 0.6rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+/* ====== Multi-material checkbox list ====== */
+.materiales-checkbox-list {
+    max-height: 160px;
+    overflow-y: auto;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px;
+    background: #f9fafb;
+}
+
+.material-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.material-checkbox-item:hover {
+    background: #e5e7eb;
+}
+
+.material-checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #6d2d3b;
+}
+
+/* ====== Status pills for préstamos ====== */
+.prestamo-pill-abierto {
+    background: #dcfce7; color: #166534;
+}
+.prestamo-pill-pendiente {
+    background: #fef9c3; color: #854d0e;
+}
+.prestamo-pill-cerrado, .prestamo-pill-finalizado {
+    background: #e0e7ff; color: #3730a3;
+}
+.prestamo-pill-entregado {
+    background: #d1fae5; color: #065f46;
+}
+.prestamo-pill-retraso {
+    background: #fee2e2; color: #991b1b;
+}
+.prestamo-pill-cancelado {
+    background: #f3f4f6; color: #6b7280;
+}
+.prestamo-pill-renovado {
+    background: #fef3c7; color: #92400e;
+}
+
+/* ====== Material tag in table ====== */
+.material-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: #374151;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ====== User cell in préstamo table ====== */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.user-cell-avatar {
+    width: 32px; height: 32px;
+    background: #e5e7eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+.user-cell-name {
+    display: block;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #1f2937;
+}
+.user-cell-id {
+    display: block;
+    font-size: 0.75rem;
+    color: #9ca3af;
 }

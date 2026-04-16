@@ -1,103 +1,338 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard de Administración</title>
-   <link rel="stylesheet" href="css/nav-bar.css">
-   <link rel="stylesheet" href="css/style.css">
-   <link rel="stylesheet" href="css/Admin.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-     <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body>
+    <link rel="stylesheet" href="css/nav-bar.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/Admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="logo">SIGMADE</div>
 
-  
- <nav class="navbar">
-  <div class="logo">SIGMADE</div>
+      <ul class="nav-menu">
+        <li class="nav-item active">Inicio</li>
+        <li class="nav-item" onclick="window.location.href = 'catalogo.html'">
+          Catalogo
+        </li>
+        <li class="nav-item" onclick="window.location.href = 'profile.html'">
+          Perfil
+        </li>
+      </ul>
 
-  <ul class="nav-menu">
-    <li class="nav-item active">Inicio</li>
-    <li class="nav-item" onclick="window.location.href='catalogo.html'">Catalogo</li>
-    <li class="nav-item" onclick="window.location.href='profile.html'">Perfil</li>
-  </ul>
+      <div class="top-bar-user">
+        <div class="notification-wrapper">
+          <i data-lucide="bell" class="icon-bell"></i>
+          <span class="notification-dot"></span>
+        </div>
 
-  <div class="top-bar-user">
-    <div class="notification-wrapper">
-      <i data-lucide="bell" class="icon-bell"></i>
-      <span class="notification-dot"></span>
-    </div>
-
-    <div class="user-pill">
-      <div class="user-avatar">
-        <i data-lucide="user" class="icon-user"></i>
+        <div class="user-pill">
+          <div class="user-avatar">
+            <i data-lucide="user" class="icon-user"></i>
+          </div>
+          <span id="userName" class="user-name"> </span>
+        </div>
       </div>
-      <span id="userName" class="user-name">
-        
-      </span>
-    </div>
-  </div>
-</nav>
+    </nav>
 
     <main class="form-container">
-        <header class="dashboard-header">
-            <h2 class="admin-title">Panel de Administración</h2>
+      <header class="dashboard-header">
+        <h2 class="admin-title">Panel de Administración</h2>
+      </header>
 
+      <div class="main-grid">
+        <button class="card-featured" onclick="openPrestamos()">
+          <div class="card-header">
+            <h3>Préstamos Activos</h3>
+            <i class="fa-solid fa-book-open icon-large"></i>
+          </div>
+
+          <div class="card-body">
+            <div class="big-number" id="cardPrestamosActivos">0</div>
+            <p class="subtitle">Préstamos en curso</p>
+
+            <div class="status-list">
+              <div class="status-item">Vencen hoy: <span id="cardVencenHoy">0</span></div>
+              <div class="status-item">Vencidos: <span id="cardVencidos">0</span></div>
+            </div>
+          </div>
+          <div class="btn-guinda">
+            Abrir Gestión de Préstamos
+          </div>
+        </button>
+
+        <div class="secondary-grid">
+          <button class="card-small" onclick="openDisciplines()">
+            <i class="fa-solid fa-dumbbell"></i>
+            <h3>Disciplinas</h3>
+            <p class="count">3</p>
+          </button>
+
+          <button class="card-small" onclick="consultarUsuarios()">
+            <i class="fa-solid fa-users"></i>
+            <h3>Usuarios</h3>
+            <p class="count" id="totalUser"></p>
+          </button>
+
+          <button class="card-small" onclick="openEvents()">
+            <i class="fa-solid fa-calendar-days"></i>
+            <h3>Eventos</h3>
+            <p class="count">5</p>
+          </button>
+
+          <button class="card-small">
+            <i class="fa-solid fa-user-gear"></i>
+            <h3>Entrenadores</h3>
+            <p class="count">12</p>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <div id="eventModalOverlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h2>Gestión de Eventos</h2>
+          <div class="header-actions">
+            <button class="btn-guinda" onclick="toggleFormEventos()">
+              <i class="fa-solid fa-plus"></i> Registrar Evento
+            </button>
+            <button class="close-modal-btn" onclick="closeModal()">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
         </header>
+
+        <div class="modal-body">
+          <section
+            id="addEventForm"
+            class="add-form-container hidden"
+          >
+        <h3>Nuevo Evento</h3>
+                <div class="form-grid">
+                    <input type="text" placeholder="Título del evento" id="eventTitle">
+                    <input type="text" placeholder="Ubicación" id="eventLocation">
+                    <input type="date" id="eventDate">
+                    <input type="time" id="eventTime">
+                </div>
+                <textarea placeholder="Descripción del evento" rows="3" id="eventDesc"></textarea>
+                <div class="form-actions">
+                    <button class="btn-cancel" onclick="toggleForm(false)">Cancelar</button>
+                    <button class="btn-save" onclick="saveEvent()">Guardar Evento</button>
+                </div>
+        </section>
+          <div id="eventList" class="event-list-container"></div>
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal()">Cerrar</button>
+        </footer>
+      </div>
+    </div>
+
+    <!--Modal para gestion de prestamos-->
+    <div id="prestamoModalOverlay" class="modal-overlay hidden">
+      <div class="modal-content modal-content-wide">
+        <header class="modal-header">
+          <h2><i class="fa-solid fa-hand-holding-hand" style="margin-right: 8px; color: var(--guinda);"></i>Gestión de Préstamos</h2>
+          <div class="header-actions">
+            <button class="btn-guinda" onclick="toggleFormPrestamo()">
+              <i class="fa-solid fa-plus"></i> Nuevo Préstamo
+            </button>
+          </div>
+        </header>
+
+        <div class="modal-body">
+          <!-- KPI Cards -->
+          <div class="stats-summary-grid">
+            <div class="stat-summary-card prestamo-abierto">
+              <span class="label"><i class="fa-solid fa-folder-open"></i> Abiertos</span>
+              <span class="number" id="prestamosAbiertos">8</span>
+            </div>
+            <div class="stat-summary-card prestamo-retraso">
+              <span class="label"><i class="fa-solid fa-clock"></i> Vencidos</span>
+              <span class="number" id="prestamosVencidos">1</span>
+            </div>
+            <div class="stat-summary-card prestamo-cerrado">
+              <span class="label"><i class="fa-solid fa-circle-check"></i> Cerrados</span>
+              <span class="number" id="prestamosCerrados">3</span>
+            </div>
+            <div class="stat-summary-card total">
+              <span class="label"><i class="fa-solid fa-list"></i> Total</span>
+              <span class="number" id="prestamosTotal">12</span>
+            </div>
+          </div>
+
+          <!-- Formulario Nuevo Préstamo (oculto por defecto) -->
+          <section id="addPrestamoForm" class="add-form-container hidden">
+            <h3><i class="fa-solid fa-file-circle-plus" style="margin-right: 6px;"></i>Registrar Nuevo Préstamo</h3>
+            <div class="form-grid-prestamo">
+              <div class="form-field">
+                <label for="prestamoUsuario">Usuario (Alumno)</label>
+                <select id="prestamoUsuario">
+                  <option value="">Seleccionar usuario...</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Material(es) disponibles</label>
+                <div id="materialesCheckboxContainer" class="materiales-checkbox-list">
+                  <!-- Se llena dinámicamente -->
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="prestamoFechaLimite">Fecha Límite de Devolución</label>
+                <input type="datetime-local" id="prestamoFechaLimite">
+              </div>
+              <div class="form-field">
+                <label for="prestamoObservaciones">Observaciones</label>
+                <textarea id="prestamoObservaciones" rows="2" placeholder="Notas adicionales sobre el préstamo..."></textarea>
+              </div>
+            </div>
+            <div class="form-actions-prestamo">
+              <button class="btn-cancel" onclick="toggleFormPrestamo()">Cancelar</button>
+              <button class="btn-save" onclick="savePrestamo()">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Préstamo
+              </button>
+            </div>
+          </section>
+
+          <!-- Barra de búsqueda -->
+          <div class="search-bar-container">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+            <input type="text" placeholder="Buscar por usuario, material o estado..." id="searchPrestamo" style="padding-left: 2.5rem;" oninput="filtrarPrestamos()">
+          </div>
+
+          <!-- Tabla CRUD de Préstamos -->
+          <div class="table-responsive">
+            <table class="custom-table" id="tablaPrestamos">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Usuario</th>
+                  <th>Material(es)</th>
+                  <th>Fecha Solicitud</th>
+                  <th>Fecha Límite</th>
+                  <th>Estado</th>
+                  <th>Entrega</th>
+                  <th>Observaciones</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaPrestamosBody">
+                <!-- Se llena dinámicamente desde la BD -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <span id="prestamoCounter" style="color: #9ca3af; font-size: 0.85rem; margin-right: auto;"></span>
+          <button class="btn-guinda" onclick="closePrestamos()">
+            <i class="fa-solid fa-xmark"></i> Cerrar
+          </button>
+        </footer>
+      </div>
+    </div>
+    <!-- Modal para gestión de disciplinas -->
+    <div id="disciplineModalOverlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h2>Gestión de Disciplinas</h2>
+          <div class="header-actions">
+            <button class="btn-guinda" onclick="toggleDisciplineForm()">
+              <i class="fa-solid fa-plus"></i> Agregar
+            </button>
+          </div>
+        </header>
+        <div class="modal-body">
+          <div id="disciplineForm" class="add-form-container hidden">
+            <h3>Nueva Disciplina</h3>
+            <div class="form-row">
+              <input type="text" placeholder="Nombre de la disciplina" id="disciplinaNombre" />
+              <select id="disciplinaEntrenador">
+                <option value="">Sin entrenador</option>
+              </select>
+              <button class="btn-save" onclick="saveDisciplina()">
+                Guardar
+              </button>
+            </div>
+          </div>
+          <div id="disciplineGrid" class="disciplines-grid"></div>
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" onclick="closeDisciplines()">
+            Cerrar
+          </button>
+        </footer>
+      </div>
+    </div>
+
+
+<!-- Modal para gestión de usuarios -->
+
+<div id="modalUsuarios" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Usuarios Registrados</h2>
+        </div>
         
-        <div class="main-grid">
-            
-            <section class="card-featured">
-                <div class="card-header">
-                    <h3>Préstamos Activos</h3>
-                    <i class="fa-solid fa-book-open icon-large"></i>
+        <div class="modal-body">
+            <div class="search-bar-container">
+                <input type="text" placeholder="Buscar por nombre o email...">
+            </div>
+
+            <div class="stats-summary-grid">
+                <div class="stat-summary-card active">
+                    <span class="label">Activos</span>
+                    <span class="number" id="activeUsersModal">0</span>
                 </div>
-                
-                <div class="card-body">
-                    <div class="big-number">12</div>
-                    <p class="subtitle">Préstamos en curso</p>
-                    
-                    <div class="status-list">
-                        <div class="status-item">Vencen hoy: 3</div>
-                        <div class="status-item">Vencidos: 1</div>
-                    </div>
+                <div class="stat-summary-card inactive">
+                    <span class="label">Sancionados</span>
+                    <span class="number" id="inactiveUsersModal">0</span>
                 </div>
-                
-                <footer class="card-footer">
-                    Click para ver detalles →
-                </footer>
-            </section>
+                <div class="stat-summary-card total">
+                    <span class="label">Total</span>
+                    <span class="number" id="totalUsersModal">0</span>
+                </div>
+            </div>
 
-            <div class="secondary-grid">
-                <button class="card-small">
-                    <i class="fa-solid fa-dumbbell"></i>
-                    <h3>Disciplinas</h3>
-                    <p class="count">8</p>
-                </button>
-
-                <button class="card-small">
-                    <i class="fa-solid fa-users"></i>
-                    <h3>Usuarios</h3>
-                    <p class="count">156</p>
-                </button>
-
-                <button class="card-small">
-                    <i class="fa-solid fa-calendar-days"></i>
-                    <h3>Eventos</h3>
-                    <p class="count">5</p>
-                </button>
-
-                <button class="card-small">
-                    <i class="fa-solid fa-user-gear"></i>
-                    <h3>Entrenadores</h3>
-                    <p class="count">12</p>
-                </button>
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Número de Teléfono</th>
+                            <th>Fecha de Registro</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaUsuariosBody">
+                    </tbody>
+                </table>
             </div>
         </div>
-    </main>
-<script>
-  lucide.createIcons();
-</script>
-<script src="modal-js/modal-admi.js"></script>
-</body>
+
+        <div class="modal-footer">
+            <button class="btn-guinda" onclick="toggleModal('modalUsuarios')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+    <script>
+      lucide.createIcons();
+    </script>
+    <script src="nav-utils.js"></script>
+    <script src="app3.js"></script>
+    <script src="modal-js/modal-admi.js"></script>
+    <script src="modal-js/modal-eventos.js"></script>
+  </body>
 </html>

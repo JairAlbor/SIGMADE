@@ -1,9 +1,23 @@
 //formArticulo.addEventListener("submit", guardarArticulo)
 
-const apiLogin ='http://localhost:3001/api/login';
-const apiTest = 'http://localhost:3001/api/test';
+const apiLogin = "http://localhost:3001/api/login";
+const apiTest = "http://localhost:3001/api/total";
 
 
+window.addEventListener('DOMContentLoaded', function() {
+    // Solo ejecutar funciones de catálogo si estamos en catalogo.html
+    if (document.getElementById('tabla-cuerpo')) {
+        cargarArticulos();
+        contarTotalMateriales();
+        contarDisponibles();
+    }
+    if (document.getElementById('totalUser')) {
+        contarTotalUsuarios();
+    }
+});
+
+
+//window.onload = contarDisponibles;
 
 async function guardarUsuario(event) {
     if (event) event.preventDefault(); // Evitar que el formulario recargue la página
@@ -20,38 +34,37 @@ async function guardarUsuario(event) {
             email: document.getElementById('correo').value,
             password: document.getElementById('passwordUs').value,
             numero: document.getElementById('tel').value,
-            rol: rolSeleccionado, // Ahora sí está definido
-         };
+            rol: rolSeleccionado,
+        };
 
         // 3. Validación básica
         if (!datos.nombres || !datos.email || !datos.rol) {
-            alert('Por favor, completa todos los campos, incluyendo la frecuencia.');
+            alert("Por favor, completa todos los campos obligatorios.");
             return;
         }
 
-        // 4. Envío al servidor
-        const response = await fetch('http://localhost:3001/api/usuario', { 
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(datos)
-        });
+    // 4. Envío al servidor
+    const response = await fetch("http://localhost:3001/api/usuario", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datos),
+    });
 
-        const resultado = await response.json();
+    const resultado = await response.json();
 
-        if (resultado.success) {
-            alert('✅ Usuario registrado con éxito');
-            if (event && event.target) event.target.closest('form').reset(); // Limpia el formulario de forma segura
-        } else {
-            alert('❌ Error: ' + resultado.message);
-        }
-
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al conectar con el servidor');
+    if (resultado.success) {
+      alert("✅ Usuario registrado con éxito");
+      document.getElementById('formUsuarios').reset();
+    } else {
+      alert("❌ Error: " + resultado.message);
     }
-};
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error al conectar con el servidor");
+  }
+}
 
 /*--------------- codigo para hacer login------------------*/
 
@@ -72,53 +85,256 @@ async function loginUsuario(event) {
         const data = await response.json();
 
         if (data.success) {
-          localStorage.setItem('nombreUsuario', data.user.nombre);
+            const usuarioInfo = {
+                id: data.user.id,
+                identificador: data.user.identificador,
+                nombre: data.user.nombre,
+                apellidos: data.user.apellidos,
+                email: data.user.email,
+                telefono: data.user.telefono,
+                rol: data.user.rol,
+                estatus: data.user.estatus,
+                create_at: data.user.created_at,
+                frecuencia: data.user.es_frecuente
+            }
+
+            // Guardar la información del usuario en localStorage para covertilo en texto JSON
+            localStorage.setItem('usuarioInfo', JSON.stringify(usuarioInfo));
+
             // Guardar info básica si es necesario y redirigir
           console.log('Usuario logueado:', data.user.nombre);
-            if (data.user.rol === 'Admin') {
+            if (data.user.rol === 'Admin' || data.user.rol === 'Operador') {
                 window.location.href = 'administracion.html'; 
             } else {
                 window.location.href = 'Dashboard.html'; 
             }
-            // Mover esto aquí causa error porque 'nombre' no está definido, usar data.user.nombre
-            // document.getElementById('userName').textContent = `Hola, ${data.user.nombre}`;
         } else {
-            alert(data.message); // Avisar al usuario si falla
-            console.log(data.message); // "Contraseña incorrecta" o "Usuario no existe"
+            alert('❌ ' + data.message);
         }
     } catch (error) {
         console.error('Error de conexión:', error);
     }
 };
 
-async function guardarArticulo(event) {
-    event.preventDefault();
-    const nombre = document.getElementById('nombreArticulo').value;
-    const disciplina = document.getElementById('disciplina').value;
-    const estado = document.getElementById('estado').value;
-    const disponible = document.getElementById('disponible').value;
 
-    fetch('/api/articulo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, disciplina, estado, disponible })
+async function guardarArticulo() {
+  const nombre = document.getElementById("nombreArticulo").value;
+  const disciplina = document.getElementById("disciplina").value;
+  const estado = document.getElementById("estado").value;
+  const tipoMaterial = document.getElementById("tipoMaterial").value;
+
+  fetch("/api/articulo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre, disciplina, estado, tipoMaterial }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert("Artículo registrado correctamente");
+        document.getElementById("formArticulo").reset();
+        cargarArticulos(); // Refrescar la lista después de guardar
+      } else {
+        alert("Error al registrar el artículo: " + data.message);
+      }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Artículo registrado correctamente');
-            document.getElementById('formArticulo').reset();
-        } else {
-            alert('Error al registrar el artículo: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error de conexión:', error);
-        alert('Error al conectar con el servidor');
+    .catch((error) => {
+      console.error("Error de conexión:", error);
+      alert("Error al conectar con el servidor");
     });
-};
+}
 
+function cargarArticulos() {
+  fetch("http://localhost:3001/api/consultar/articulo")
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        const tablaCuerpo = document.getElementById("tabla-cuerpo");
+        tablaCuerpo.innerHTML = ""; // Limpiamos solo las filas
 
+        data.articulos.forEach((articulo) => {
+          // Lógica para el color del badge (basada en tu CSS)
+          // Si el dato viene de una BD, podrías comparar por ID o por nombre
+          const badgeClass =
+            articulo.disciplina_id === "Deporte"
+              ? "badge-deporte"
+              : "badge-libro";
 
+          const fila = document.createElement("tr");
+          fila.innerHTML = `
+            <td><strong>${articulo.nombre_material}</strong></td>
+            <td>${articulo.nombre_disciplina}</span></td>
+            <td>${articulo.tipoMaterial}</td>
+            <td>${articulo.estado}</td>
+            <td class="text-green">${articulo.disponible == 1 ? 'Sí' : 'No'}</td>
+            <td class="actions">
+                <button class="btn-icon edit" onclick="editarMaterial(${articulo.id})">
+                    <i class="fa-regular fa-pen-to-square"></i>
+                </button>
+                <button class="btn-icon delete" onclick="eliminarMaterial(${articulo.id})">
+                    <i class="fa-regular fa-trash-can"></i>
+                </button>
+            </td>
+          `;
+          tablaCuerpo.appendChild(fila);
+        });
+      } else {
+        console.error("Error:", data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("Error de conexión:", error);
+    });
+}
+// Función para contar total de artículos
+function contarTotalMateriales() {
+  const elTotal = document.getElementById("articulos");
+  
+  if (!elTotal) {
+    console.error("❌ Elemento con id 'articulos' no encontrado");
+    return;
+  }
 
-// Función para guardar proyecto
+  fetch("http://localhost:3001/api/totalArt")
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        elTotal.textContent = data.total;
+        console.log("✅ Total actualizado:", data.total);
+      } else {  
+        console.error("Error al obtener el total:", data.error);
+        elTotal.textContent = "Error";
+      }
+    })
+    .catch((error) => {
+      console.error("Error de conexión:", error);
+      elTotal.textContent = "Error";
+    });
+}
+
+// Función para contar artículos disponibles
+function contarDisponibles() {
+  const dispon = document.getElementById("disponibles");
+  
+  if (!dispon) {
+    console.error("❌ Elemento con id 'disponibles' no encontrado");
+    return;
+  }
+
+  fetch("http://localhost:3001/api/totalArt")
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        // ✅ Usar data.disponibles que viene del endpoint
+        dispon.textContent = data.disponibles;
+        console.log("✅ Disponibles actualizado:", data.disponibles);
+        console.log("Total de materiales:", data.total); // Info adicional
+      } else {
+        console.error("Error:", data.error);
+        dispon.textContent = "Error";
+      }
+    })
+    .catch((error) => {
+      console.error("Error de conexión:", error);
+      dispon.textContent = "Error";
+      alert("Error al conectar con el servidor");
+    });
+}
+
+//funcion para editar material
+window.editarMaterial = async function(id) {
+  // Obtenemos disciplinas primero para mostrar opciones al usuario
+  let disciplinas = [];
+  try {
+      const res = await fetch('http://localhost:3001/api/disciplina');
+      const dData = await res.json();
+      if(dData.success) disciplinas = dData.disciplinas;
+  } catch(e) {
+      console.error("No se pudieron cargar disciplinas:", e);
+  }
+
+  const nuevoNombre = prompt("Ingrese el nuevo nombre del artículo:");
+  if (!nuevoNombre) return;
+
+  let optsDisciplina = disciplinas.map(d => `${d.id}=${d.nombre}`).join(", ");
+  const nuevaDisciplinaStr = prompt(`Ingrese el ID de la nueva disciplina (${optsDisciplina || 'No se pudieron cargar'}):`);
+  const nuevaDisciplina = parseInt(nuevaDisciplinaStr);
+  if (isNaN(nuevaDisciplina)) {
+      alert("Error: Debes ingresar el número ID de la disciplina.");
+      return;
+  }
+
+  const nuevoEstado = prompt("Ingrese el nuevo estado (Nuevo, Bueno, Malo):");
+  if (!nuevoEstado) return;
+
+  const nuevaDisponibilidad = prompt("¿Está disponible? (Sí/No):");
+  if (!nuevaDisponibilidad) return;
+
+  try {
+    const response = await fetch(`http://localhost:3001/api/articulo/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre: nuevoNombre,
+        disciplina: nuevaDisciplina,
+        estado: nuevoEstado,
+        disponible: (nuevaDisponibilidad.toLowerCase() === "sí" || nuevaDisponibilidad.toLowerCase() === "si") ? 1 : 0,
+      }),
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      alert("✅ Artículo editado correctamente");
+      cargarArticulos();
+      contarTotalMateriales();
+      contarDisponibles();
+    } else {
+      alert("❌ Error al editar el artículo: " + data.error);
+    }
+  } catch (error) {
+    console.error("Error de conexión:", error);
+    alert("Error al conectar con el servidor backend");
+  }
+}
+
+//funcion para eliminar material
+window.eliminarMaterial = async function(id) {
+  if (!confirm("¿Estás seguro de eliminar este material?")) return;
+
+  try {
+    const response = await fetch(`http://localhost:3001/api/articulo/${id}`, { method: "DELETE" });
+    const data = await response.json();
+
+    if (data.success) {
+      alert("✅ Artículo eliminado correctamente");
+      cargarArticulos();
+      contarTotalMateriales();
+      contarDisponibles();
+      return;
+    }
+
+    // Si el backend pide confirmación para forzar (tiene historial pero no préstamos activos)
+    if (data.requiereForzar) {
+      if (confirm(data.error + "\n\nPresiona Aceptar para eliminar definitivamente.")) {
+        const res2 = await fetch(`http://localhost:3001/api/articulo/${id}?forzar=true`, { method: "DELETE" });
+        const data2 = await res2.json();
+        if (data2.success) {
+          alert("✅ Artículo y su historial eliminados correctamente");
+          cargarArticulos();
+          contarTotalMateriales();
+          contarDisponibles();
+        } else {
+          alert("❌ " + data2.error);
+        }
+      }
+      return;
+    }
+
+    // Cualquier otro error (préstamos activos, etc.)
+    alert("❌ " + data.error);
+
+  } catch (error) {
+    console.error("Error de conexión:", error);
+    alert("Error al conectar con el servidor API");
+  }
+}

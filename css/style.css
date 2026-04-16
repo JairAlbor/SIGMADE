@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 /* =========================================
    CONFIGURACIÓN BASE
 ========================================= */
@@ -28,13 +30,20 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+}
+
+body, input, button, select, textarea {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Globalización de todos los títulos principales (Admin, Dashboard, Catalogo, Perfil) */
+.admin-title, .dashboard-title, .header-catalogo h1, h1 {
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  letter-spacing: -0.5px;
 }
 
 body {
