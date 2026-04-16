@@ -5,6 +5,12 @@
     --borde-suave: #e0e4e8;
 }
 
+/* Titulo del catalogo */
+.header-catalogo h1 {
+    color: #ffffff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+}
+
 /* Contenedor del Formulario */
 .form-card {
     background: white;
