@@ -150,6 +150,7 @@ async function saveDisciplina() {
             document.getElementById('disciplinaNombre').value = '';
             toggleDisciplineForm();
             cargarDisciplinas();
+            if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
         } else {
             alert('❌ ' + data.error);
         }
@@ -166,6 +167,7 @@ async function eliminarDisciplina(id) {
         if (data.success) {
             alert('✅ ' + data.mensaje);
             cargarDisciplinas();
+            if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
         } else {
             alert('❌ ' + data.error);
         }
@@ -173,6 +175,26 @@ async function eliminarDisciplina(id) {
         alert('❌ Error: ' + err.message);
     }
 }
+
+async function contarTotalDisciplinas() {
+  try {
+    const response = await fetch('/api/disciplina');
+    const data = await response.json();
+    
+    // Verificamos que la consulta haya sido exitosa
+    if (data.success) {
+      const elementoTarjeta = document.getElementById('totalDisciplinas');
+      if (elementoTarjeta) {
+        // Obtenemos la cantidad de elementos en el arreglo (array) y lo mostramos
+        elementoTarjeta.textContent = data.disciplinas.length;
+      }
+    }
+  } catch (err) {
+    console.error('Error al intentar contabilizar disciplinas:', err);
+  }
+}
+
+
 
 // ======================== PRÉSTAMOS ========================
 let prestamosData = [];

@@ -55,7 +55,7 @@ app.post('/api/login', async (req, res) => {
 
         // Intentar comparar con bcrypt primero, luego texto plano (migración)
         let passwordMatch = false;
-        
+
         if (usuario.password.startsWith('$2a$') || usuario.password.startsWith('$2b$')) {
             // La contraseña en BD ya está hasheada
             passwordMatch = await bcrypt.compare(password, usuario.password);
@@ -148,10 +148,10 @@ app.get('/api/usuario/num', async (req, res) => {
         const r = results[0];
         res.json({
             success: true,
-            total: r.totalUser || 0,
-            activos: r.totalActivos || 0,
-            inactivos: r.totalSancionados || 0,
-            sancionados: r.totalSancionados || 0
+            total: Number(r.totalUser) || 0,
+            activos: Number(r.totalActivos) || 0,
+            inactivos: Number(r.totalSancionados) || 0,
+            sancionados: Number(r.totalSancionados) || 0
         });
     } catch (err) {
         console.error('❌ Error:', err);
@@ -429,8 +429,8 @@ app.get('/api/prestamo/stats', async (req, res) => {
         const s = results[0];
         res.json({
             success: true,
-            total: s.total || 0, abiertos: s.abiertos || 0, retraso: s.retraso || 0,
-            cerrados: s.cerrados || 0, vencen_hoy: s.vencen_hoy || 0, vencidos_real: s.vencidos_real || 0
+            total: Number(s.total) || 0, abiertos: Number(s.abiertos) || 0, retraso: Number(s.retraso) || 0,
+            cerrados: Number(s.cerrados) || 0, vencen_hoy: Number(s.vencen_hoy) || 0, vencidos_real: Number(s.vencidos_real) || 0
         });
     } catch (err) {
         console.error('❌ Error:', err);
@@ -451,6 +451,7 @@ app.post('/api/prestamo', async (req, res) => {
 
     try {
         // 1. Verificar que el usuario no tenga préstamo activo
+
         const activos = await query(
             "SELECT COUNT(*) AS count FROM prestamo WHERE usuario_id = ? AND estado_general IN ('Pendiente','Abierto','Activo','Renovado')",
             [usuario_id]
@@ -458,6 +459,7 @@ app.post('/api/prestamo', async (req, res) => {
         if (activos[0].count > 0) {
             return res.status(400).json({ success: false, message: 'El usuario ya tiene un préstamo activo/pendiente' });
         }
+
 
         // 2. Verificar que TODOS los materiales estén disponibles
         const disponibles = await query(
@@ -766,9 +768,9 @@ app.get('/api/estadisticas', async (req, res) => {
         `);
         res.json({
             success: true,
-            usuarios: { total: users[0].total, activos: users[0].activos },
-            materiales: { total: mats[0].total, disponibles: mats[0].disponibles },
-            prestamos: { total: prests[0].total, activos: prests[0].activos, vencidos: prests[0].vencidos }
+            usuarios: { total: Number(users[0].total) || 0, activos: Number(users[0].activos) || 0 },
+            materiales: { total: Number(mats[0].total) || 0, disponibles: Number(mats[0].disponibles) || 0 },
+            prestamos: { total: Number(prests[0].total) || 0, activos: Number(prests[0].activos) || 0, vencidos: Number(prests[0].vencidos) || 0 }
         });
     } catch (err) {
         console.error('❌ Error:', err);
