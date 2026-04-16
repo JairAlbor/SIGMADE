@@ -31,6 +31,12 @@
     padding: 28px 32px;
 }
 
+/* Titulo del catalogo */
+.header-catalogo h1 {
+    color: #ffffff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+}
+
 .header-catalogo {
     display: flex;
     align-items: center;
