@@ -135,6 +135,7 @@
         </footer>
       </div>
     </div>
+    
 
     <!--Modal para gestion de prestamos-->
     <div id="prestamoModalOverlay" class="modal-overlay hidden">
@@ -144,6 +145,9 @@
           <div class="header-actions">
             <button class="btn-guinda" onclick="toggleFormPrestamo()">
               <i class="fa-solid fa-plus"></i> Nuevo Préstamo
+            </button>
+            <button class="close-modal-btn" onclick="closePrestamos()" title="Cerrar">
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
         </header>
@@ -194,8 +198,25 @@
                 <textarea id="prestamoObservaciones" rows="2" placeholder="Notas adicionales sobre el préstamo..."></textarea>
               </div>
             </div>
+          <!-- Alerta de conflictos de fecha -->
+          <div id="conflictosAlert" class="conflictos-alert hidden">
+            <div class="conflictos-header">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <strong>Conflicto de reserva detectado</strong>
+            </div>
+            <p style="margin:6px 0 10px; font-size:0.88rem; color:#92400e;">
+              Los siguientes materiales ya están reservados en el período solicitado:
+            </p>
+            <ul id="conflictosLista" style="margin:0; padding-left:18px; font-size:0.85rem;"></ul>
+            <p style="margin:10px 0 0; font-size:0.82rem; color:#92400e;">
+              <i class="fa-solid fa-lightbulb"></i> Elige una fecha distinta o selecciona otros materiales.
+            </p>
+          </div>
+
             <div class="form-actions-prestamo">
-              <button class="btn-cancel" onclick="toggleFormPrestamo()">Cancelar</button>
+              <button class="btn-cancel" onclick="toggleFormPrestamo()">
+                <i class="fa-solid fa-xmark"></i> Cancelar
+              </button>
               <button class="btn-save" onclick="savePrestamo()">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar Préstamo
               </button>
