@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Referencias ────────────────────────────────────────
-    const btnAbrir     = document.getElementById('btn-abrir-formulario');
-    const btnCancelar  = document.getElementById('btn-cancelar');
+    const btnAbrir = document.getElementById('btn-abrir-formulario');
+    const btnCancelar = document.getElementById('btn-cancelar');
     const contenedorForm = document.getElementById('contenedor-formulario');
 
     // ── Control del formulario (solo si el elemento existe) ─
@@ -29,12 +29,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (btnCancelar && contenedorForm) {
-        btnCancelar.addEventListener('click', () => {
-            contenedorForm.classList.add('hidden');
-            document.getElementById('formArticulo')?.reset();
-            const cantInput = document.getElementById('cantidadArticulo');
-            if (cantInput) cantInput.value = 1;
-        });
+    // Ocultar formulario
+    btnCancelar.addEventListener('click', () => {
+        contenedorForm.classList.add('hidden');
+    });
+
+    btnGuardar.addEventListener('click', () => {
+        contenedorForm.classList.add('hidden');
+        // Aquí puedes agregar la lógica para guardar el material, por ejemplo, enviar los datos a tu servidor o actualizar la tabla
+    });
+    function logout() {
+        // 1. Opcional: Limpiar datos del usuario (token, nombre, etc.)
+        // localStorage.removeItem('userToken');
+        // sessionStorage.clear();
+
+        // 2. Redirigir al login
+        window.location.href = "index.html"; // Asegúrate de que el nombre del archivo coincida
     }
-});

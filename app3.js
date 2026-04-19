@@ -14,7 +14,10 @@ function contarTotalUsuarios() {
 
   fetch("http://localhost:3001/api/usuario/num", {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+    },
   })
     .then((response) => response.json())
     .then((data) => {
@@ -59,7 +62,10 @@ window.onclick = function (event) {
 function consultarUsuarios() {
   fetch("http://localhost:3001/api/usuario", {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+    },
   })
     .then((response) => response.json())
     .then((data) => {
@@ -124,7 +130,10 @@ function consultarUsuarios() {
 function consultarUsuarioPorID(id) {
   fetch(`http://localhost:3001/api/usuario/${id}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+    },
   })
     .then((response) => response.json())
     .then((data) => {
@@ -181,15 +190,22 @@ function eliminarUsuario(id) {
   if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
     fetch(`/api/usuario/${id}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+      },
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
           alert('✅ ' + data.mensaje);
           toggleModal('modalUsuarios');
+
+
+          // Actualizar la lista de usuarios después de eliminar
           consultarUsuarios();
-          contarTotalUsuarios();
+          contarTotalUsuarios(); // Actualizar el total de usuarios después de eliminar
+
         } else {
           alert('❌ ' + (data.error || 'Error al eliminar usuario'));
         }
@@ -210,41 +226,32 @@ window.onload = () => {
   contarTotalEntrenadores()
 };
 
-// Cargar estadísticas reales en la tarjeta azul de préstamos
-async function cargarStatsCard() {
+// ============== FUNCIÓN PARA PROBAR EL TOKEN (JWT) ==============
+async function probarRutaProtegida() {
+  const token = localStorage.getItem('userToken');
+  if (!token) {
+    alert("⚠️ No hay token guardado. Debes iniciar sesión primero.");
+    return;
+  }
+
   try {
-    const res = await fetch('/api/prestamo/stats');
-    const data = await res.json();
+    const response = await fetch("http://localhost:3001/api/test", {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
 
     if (data.success) {
-      // Préstamos activos = Abiertos + En retraso
-      const activos = data.abiertos + data.retraso;
-      document.getElementById('cardPrestamosActivos').textContent = activos;
-      document.getElementById('cardVencenHoy').textContent = data.vencen_hoy;
-
-      // Combinando Vencidos y Finalizados (cerrados) en la misma variable
-      document.getElementById('cardVencidos').textContent = Number(data.vencidos_real) + Number(data.cerrados);
+      alert("✅ Éxito:\n" + data.message + "\n\nDatos desde el token: " + JSON.stringify(data.datosDelToken, null, 2));
+      console.log("Prueba superada:", data);
+    } else {
+      alert("❌ Denegado:\n" + data.message);
     }
-  } catch (err) {
-    console.error('Error cargando stats de préstamos:', err);
+  } catch (error) {
+    console.error("Error al probar token:", error);
+    alert("Error de red intentando probar el token.");
   }
-}
-// Función para contar el total de entrenadores registrados
-
-async function contarTotalEntrenadores() {
-    try {
-      const res = await fetch('/api/entrenador');
-      const data = await res.json();
-      
-      //verificar que la respuesta sea exitosa y que contenga el número total de entrenadores
-      if (data.success) {
-        const elementoTarjeta = document.getElementById('totalEntrenadores');
-        if (elementoTarjeta) {
-          //Usamos .length para obtener el número total de entrenadores registrados
-          elementoTarjeta.textContent = data.entrenadores.length;
-        }
-      }
-    } catch (err) {
-      console.error('Error contando entrenadores:', err);
-    }
 }

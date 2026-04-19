@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/nav-bar.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="modal-js/verificarSesion.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
   </head>
   <body>
@@ -26,14 +28,17 @@
       <span class="notification-dot"></span>
     </div>
 
-    <div class="user-pill">
-      <div class="user-avatar">
+<div class="user-pill">
+    <div class="user-avatar">
         <i data-lucide="user" class="icon-user"></i>
-      </div>
-      <span id="userName" class="user-name">
-        
-      </span>
     </div>
+    <span id="userName" class="user-name">Usuario</span>
+    
+    <button onclick="logout()" class="logout-btn" title="Cerrar sesión">
+        <i data-lucide="log-out" class="icon-logout"></i>
+    </button>
+</div>
+
   </div>
 </nav>
 
@@ -101,5 +106,6 @@
 <script src="nav-utils.js"></script>
 <script src="modal-js/modal-dashboard.js"></script>
 </section>
+<script src="modal-js/modal-dashboard.js"></script>
   </body>
 </html>
