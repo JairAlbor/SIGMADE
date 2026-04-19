@@ -32,6 +32,7 @@ app.get('/api/test', (req, res) => {
 // ============ AUTENTICACIÓN ============
 // ========================================================
 
+
 // LOGIN
 app.post('/api/login', async (req, res) => {
     console.log('🔐 POST /api/login');
@@ -55,7 +56,7 @@ app.post('/api/login', async (req, res) => {
 
         // Intentar comparar con bcrypt primero, luego texto plano (migración)
         let passwordMatch = false;
-        
+
         if (usuario.password.startsWith('$2a$') || usuario.password.startsWith('$2b$')) {
             // La contraseña en BD ya está hasheada
             passwordMatch = await bcrypt.compare(password, usuario.password);
@@ -148,10 +149,10 @@ app.get('/api/usuario/num', async (req, res) => {
         const r = results[0];
         res.json({
             success: true,
-            total: r.totalUser || 0,
-            activos: r.totalActivos || 0,
-            inactivos: r.totalSancionados || 0,
-            sancionados: r.totalSancionados || 0
+            total: Number(r.totalUser) || 0,
+            activos: Number(r.totalActivos) || 0,
+            inactivos: Number(r.totalSancionados) || 0,
+            sancionados: Number(r.totalSancionados) || 0
         });
     } catch (err) {
         console.error('❌ Error:', err);
@@ -241,7 +242,7 @@ app.put('/api/usuario/:id/sancionar', async (req, res) => {
 // CREAR material
 app.post('/api/articulo', async (req, res) => {
     console.log('📦 POST /api/articulo');
-    const { nombre, disciplina, estado, tipoMaterial } = req.body;
+    const { nombre, disciplina, estado, tipoMaterial, cantidad, descripcion } = req.body;
 
     if (!nombre || !disciplina) {
         return res.status(400).json({ success: false, error: 'Campos obligatorios faltantes' });
@@ -249,13 +250,13 @@ app.post('/api/articulo', async (req, res) => {
 
     try {
         const result = await query(
-            'INSERT INTO material (nombre, disciplina_id, estado, tipoMaterial, disponible) VALUES (?, ?, ?, ?, 1)',
-            [nombre, disciplina, estado, tipoMaterial]
+            'INSERT INTO material (nombre, disciplina_id, estado, tipoMaterial, disponible, cantidad, descripcion) VALUES (?, ?, ?, ?, 1, ?, ?)',
+            [nombre, disciplina, estado, tipoMaterial, cantidad || 1, descripcion || null]
         );
         res.json({ success: true, mensaje: 'Artículo agregado', id: result.insertId });
     } catch (err) {
         console.error('❌ Error:', err);
-        res.status(500).json({ success: false, error: 'Error al agregar articulo' });
+        res.status(500).json({ success: false, error: 'Error al agregar articulo: ' + err.message });
     }
 });
 
@@ -310,12 +311,12 @@ app.delete('/api/articulo/:id', async (req, res) => {
 // EDITAR material
 app.put('/api/articulo/:id', async (req, res) => {
     const { id } = req.params;
-    const { nombre, disciplina, estado, disponible } = req.body;
+    const { nombre, disciplina, estado, disponible, cantidad, descripcion } = req.body;
 
     try {
         const result = await query(
-            'UPDATE material SET nombre = ?, disciplina_id = ?, estado = ?, disponible = ? WHERE id = ?',
-            [nombre, disciplina, estado, disponible, id]
+            'UPDATE material SET nombre = ?, disciplina_id = ?, estado = ?, disponible = ?, cantidad = ?, descripcion = ? WHERE id = ?',
+            [nombre, disciplina, estado, disponible, cantidad || 1, descripcion || null, id]
         );
         if (result.affectedRows === 0) return res.status(404).json({ success: false, error: 'Artículo no encontrado' });
         res.json({ success: true, mensaje: 'Artículo editado' });
@@ -329,7 +330,7 @@ app.put('/api/articulo/:id', async (req, res) => {
 app.get('/api/consultar/articulo', async (req, res) => {
     try {
         const results = await query(
-            'SELECT m.id, m.nombre AS nombre_material, d.nombre AS nombre_disciplina, m.tipoMaterial, m.estado, m.disponible FROM material m LEFT JOIN disciplina d ON m.disciplina_id = d.id'
+            'SELECT m.id, m.nombre AS nombre_material, d.nombre AS nombre_disciplina, m.tipoMaterial, m.estado, m.disponible, m.cantidad, m.descripcion FROM material m LEFT JOIN disciplina d ON m.disciplina_id = d.id'
         );
         res.json({ success: true, articulos: results });
     } catch (err) {
@@ -429,12 +430,40 @@ app.get('/api/prestamo/stats', async (req, res) => {
         const s = results[0];
         res.json({
             success: true,
-            total: s.total || 0, abiertos: s.abiertos || 0, retraso: s.retraso || 0,
-            cerrados: s.cerrados || 0, vencen_hoy: s.vencen_hoy || 0, vencidos_real: s.vencidos_real || 0
+            total: Number(s.total) || 0, abiertos: Number(s.abiertos) || 0, retraso: Number(s.retraso) || 0,
+            cerrados: Number(s.cerrados) || 0, vencen_hoy: Number(s.vencen_hoy) || 0, vencidos_real: Number(s.vencidos_real) || 0
         });
     } catch (err) {
         console.error('❌ Error:', err);
         res.status(500).json({ success: false, error: 'Error al consultar estadísticas' });
+    }
+});
+
+// VERIFICAR conflictos de fechas (endpoint auxiliar)
+app.post('/api/prestamo/verificar-conflicto', async (req, res) => {
+    const { material_ids, fecha_limite } = req.body;
+    const materiales = Array.isArray(material_ids) ? material_ids : (material_ids ? [material_ids] : []);
+    if (materiales.length === 0 || !fecha_limite) {
+        return res.json({ success: true, conflictos: [] });
+    }
+    try {
+        const placeholders = materiales.map(() => '?').join(',');
+        const conflictos = await query(`
+            SELECT m.nombre AS material_nombre, m.tipoMaterial,
+                   p.id AS prestamo_id, p.fecha_limite,
+                   u.nombre AS usuario_nombre, u.apellidos AS usuario_apellidos
+            FROM detalle_prestamo dp
+            JOIN material m ON dp.material_id = m.id
+            JOIN prestamo p ON dp.prestamo_id = p.id
+            JOIN usuario u ON p.usuario_id = u.id
+            WHERE dp.material_id IN (${placeholders})
+              AND p.estado_general IN ('Pendiente','Abierto','Activo','Renovado')
+              AND p.fecha_limite >= NOW()
+        `, materiales);
+        res.json({ success: true, conflictos });
+    } catch (err) {
+        console.error('❌ Error verificando conflictos:', err);
+        res.status(500).json({ success: false, error: 'Error al verificar conflictos' });
     }
 });
 
@@ -450,22 +479,43 @@ app.post('/api/prestamo', async (req, res) => {
     }
 
     try {
-        // 1. Verificar que el usuario no tenga préstamo activo
-        const activos = await query(
-            "SELECT COUNT(*) AS count FROM prestamo WHERE usuario_id = ? AND estado_general IN ('Pendiente','Abierto','Activo','Renovado')",
-            [usuario_id]
-        );
-        if (activos[0].count > 0) {
-            return res.status(400).json({ success: false, message: 'El usuario ya tiene un préstamo activo/pendiente' });
+        // 1. Verificar conflictos de fechas: ¿alguno de estos materiales ya está activo en una reserva?
+        const placeholders = materiales.map(() => '?').join(',');
+        const conflictos = await query(`
+            SELECT m.nombre AS material_nombre, m.tipoMaterial,
+                   p.id AS prestamo_id, p.fecha_limite,
+                   u.nombre AS usuario_nombre, u.apellidos AS usuario_apellidos
+            FROM detalle_prestamo dp
+            JOIN material m ON dp.material_id = m.id
+            JOIN prestamo p ON dp.prestamo_id = p.id
+            JOIN usuario u ON p.usuario_id = u.id
+            WHERE dp.material_id IN (${placeholders})
+              AND p.estado_general IN ('Pendiente','Abierto','Activo','Renovado')
+              AND p.fecha_limite >= NOW()
+        `, materiales);
+
+        if (conflictos.length > 0) {
+            return res.status(409).json({
+                success: false,
+                conflicto: true,
+                message: 'Uno o más materiales ya están reservados en ese período.',
+                conflictos: conflictos.map(c => ({
+                    material: c.material_nombre,
+                    tipo: c.tipoMaterial,
+                    prestamo_id: c.prestamo_id,
+                    reservado_hasta: c.fecha_limite,
+                    reservado_por: `${c.usuario_nombre} ${c.usuario_apellidos || ''}`
+                }))
+            });
         }
 
-        // 2. Verificar que TODOS los materiales estén disponibles
+        // 2. Verificar que TODOS los materiales estén disponibles (estado binario)
         const disponibles = await query(
-            `SELECT id FROM material WHERE id IN (${materiales.map(() => '?').join(',')}) AND disponible = 1`,
+            `SELECT id FROM material WHERE id IN (${placeholders}) AND disponible = 1`,
             materiales
         );
         if (disponibles.length !== materiales.length) {
-            return res.status(400).json({ success: false, message: 'Uno o más materiales no están disponibles' });
+            return res.status(400).json({ success: false, message: 'Uno o más materiales no están disponibles actualmente' });
         }
 
         // 3. Insertar préstamo
@@ -766,9 +816,9 @@ app.get('/api/estadisticas', async (req, res) => {
         `);
         res.json({
             success: true,
-            usuarios: { total: users[0].total, activos: users[0].activos },
-            materiales: { total: mats[0].total, disponibles: mats[0].disponibles },
-            prestamos: { total: prests[0].total, activos: prests[0].activos, vencidos: prests[0].vencidos }
+            usuarios: { total: Number(users[0].total) || 0, activos: Number(users[0].activos) || 0 },
+            materiales: { total: Number(mats[0].total) || 0, disponibles: Number(mats[0].disponibles) || 0 },
+            prestamos: { total: Number(prests[0].total) || 0, activos: Number(prests[0].activos) || 0, vencidos: Number(prests[0].vencidos) || 0 }
         });
     } catch (err) {
         console.error('❌ Error:', err);

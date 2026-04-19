@@ -55,12 +55,12 @@
           </div>
 
           <div class="card-body">
-            <div class="big-number" id="cardPrestamosActivos">0</div>
+            <div class="big-number" id="cardPrestamosActivos"></div>
             <p class="subtitle">Préstamos en curso</p>
 
             <div class="status-list">
-              <div class="status-item">Vencen hoy: <span id="cardVencenHoy">0</span></div>
-              <div class="status-item">Vencidos: <span id="cardVencidos">0</span></div>
+              <div class="status-item">Vencen hoy: <span id="cardVencenHoy"></span></div>
+              <div class="status-item">Vencidos: <span id="cardVencidos"></span></div>
             </div>
           </div>
           <div class="btn-guinda">
@@ -72,7 +72,7 @@
           <button class="card-small" onclick="openDisciplines()">
             <i class="fa-solid fa-dumbbell"></i>
             <h3>Disciplinas</h3>
-            <p class="count">3</p>
+            <span class="count" id="totalDisciplinas"></span>
           </button>
 
           <button class="card-small" onclick="consultarUsuarios()">
@@ -90,7 +90,7 @@
           <button class="card-small">
             <i class="fa-solid fa-user-gear"></i>
             <h3>Entrenadores</h3>
-            <p class="count">12</p>
+            <p class="count" id="totalEntrenadores"></p>
           </button>
         </div>
       </div>
@@ -135,6 +135,7 @@
         </footer>
       </div>
     </div>
+    
 
     <!--Modal para gestion de prestamos-->
     <div id="prestamoModalOverlay" class="modal-overlay hidden">
@@ -144,6 +145,9 @@
           <div class="header-actions">
             <button class="btn-guinda" onclick="toggleFormPrestamo()">
               <i class="fa-solid fa-plus"></i> Nuevo Préstamo
+            </button>
+            <button class="close-modal-btn" onclick="closePrestamos()" title="Cerrar">
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
         </header>
@@ -194,8 +198,25 @@
                 <textarea id="prestamoObservaciones" rows="2" placeholder="Notas adicionales sobre el préstamo..."></textarea>
               </div>
             </div>
+          <!-- Alerta de conflictos de fecha -->
+          <div id="conflictosAlert" class="conflictos-alert hidden">
+            <div class="conflictos-header">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <strong>Conflicto de reserva detectado</strong>
+            </div>
+            <p style="margin:6px 0 10px; font-size:0.88rem; color:#92400e;">
+              Los siguientes materiales ya están reservados en el período solicitado:
+            </p>
+            <ul id="conflictosLista" style="margin:0; padding-left:18px; font-size:0.85rem;"></ul>
+            <p style="margin:10px 0 0; font-size:0.82rem; color:#92400e;">
+              <i class="fa-solid fa-lightbulb"></i> Elige una fecha distinta o selecciona otros materiales.
+            </p>
+          </div>
+
             <div class="form-actions-prestamo">
-              <button class="btn-cancel" onclick="toggleFormPrestamo()">Cancelar</button>
+              <button class="btn-cancel" onclick="toggleFormPrestamo()">
+                <i class="fa-solid fa-xmark"></i> Cancelar
+              </button>
               <button class="btn-save" onclick="savePrestamo()">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar Préstamo
               </button>
@@ -330,9 +351,17 @@
     <script>
       lucide.createIcons();
     </script>
+    
+    <!-- nav-utils.js: Controla la sesión (redirección al login), el cierre de sesión, navegación basada en el rol y el nombre de usuario en la barra. -->
     <script src="nav-utils.js"></script>
+    
+    <!-- app3.js: Gestiona el CRUD completo y visualización del listado de usuarios (consultar, modificar estados, eliminar y estadística total). -->
     <script src="app3.js"></script>
+    
+    <!-- modal-admi.js: Extrae información del localStorage de forma complementaria para modales y renderizar la bienvenida principal. -->
     <script src="modal-js/modal-admi.js"></script>
+    
+    <!-- modal-eventos.js: Contiene toda la lógica (peticiones API, renderizado y modales) para gestionar Préstamos, Disciplinas y Eventos. -->
     <script src="modal-js/modal-eventos.js"></script>
   </body>
 </html>

@@ -150,6 +150,7 @@ async function saveDisciplina() {
             document.getElementById('disciplinaNombre').value = '';
             toggleDisciplineForm();
             cargarDisciplinas();
+            if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
         } else {
             alert('❌ ' + data.error);
         }
@@ -166,6 +167,7 @@ async function eliminarDisciplina(id) {
         if (data.success) {
             alert('✅ ' + data.mensaje);
             cargarDisciplinas();
+            if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
         } else {
             alert('❌ ' + data.error);
         }
@@ -173,6 +175,27 @@ async function eliminarDisciplina(id) {
         alert('❌ Error: ' + err.message);
     }
 }
+
+
+async function contarTotalDisciplinas() {
+  try {
+    const response = await fetch('/api/disciplina');
+    const data = await response.json();
+    
+    // Verificamos que la consulta haya sido exitosa
+    if (data.success) {
+      const elementoTarjeta = document.getElementById('totalDisciplinas');
+      if (elementoTarjeta) {
+        // Obtenemos la cantidad de elementos en el arreglo (array) y lo mostramos
+        elementoTarjeta.textContent = data.disciplinas.length;
+      }
+    }
+  } catch (err) {
+    console.error('Error al intentar contabilizar disciplinas:', err);
+  }
+}
+
+
 
 // ======================== PRÉSTAMOS ========================
 let prestamosData = [];
@@ -192,6 +215,8 @@ function closePrestamos() {
 function toggleFormPrestamo() {
     const form = document.getElementById('addPrestamoForm');
     form.classList.toggle('hidden');
+    // Limpiar alert de conflictos al abrir/cerrar
+    ocultarConflictos();
 }
 
 // ====== CARGAR Y RENDERIZAR ======
@@ -213,7 +238,7 @@ function renderPrestamos(prestamos) {
     tbody.innerHTML = '';
 
     if (prestamos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color:#9ca3af;">
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2.5rem; color:#9ca3af;">
             <i class="fa-solid fa-inbox" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
             No hay préstamos registrados</td></tr>`;
         document.getElementById('prestamoCounter').textContent = '';
@@ -221,29 +246,48 @@ function renderPrestamos(prestamos) {
     }
 
     prestamos.forEach(p => {
-        const pillClass = getEstadoPillClass(p.estado_general);
-        const fechaSol = formatFecha(p.fecha_solicitud);
-        const fechaLim = formatFecha(p.fecha_limite);
-        const fechaEnt = p.fecha_entrega ? formatFecha(p.fecha_entrega) : '<span style="color:#9ca3af;">—</span>';
+        const pillClass  = getEstadoPillClass(p.estado_general);
+        const fechaSol   = formatFecha(p.fecha_solicitud);
+        const fechaLim   = formatFecha(p.fecha_limite);
+        const fechaEnt   = p.fecha_entrega ? formatFecha(p.fecha_entrega) : '<span style="color:#9ca3af;">—</span>';
         const materiales = p.materiales || 'Sin material';
+
+        // Badge de tipo de material (cancha vs deportivo)
+        const tieneCancha = (p.materiales || '').toLowerCase().includes('cancha') ||
+                            (p.tipo_material || '').toLowerCase().includes('cancha');
+        const tipoBadge   = tieneCancha
+            ? `<span class="badge-cancha"><i class="fa-solid fa-table-tennis-paddle-ball"></i> Cancha</span>`
+            : `<span class="badge-material"><i class="fa-solid fa-box"></i> Material</span>`;
 
         const esActivo = ['Abierto','Activo','Renovado','Pendiente'].includes(p.estado_general);
         let acciones = '';
         if (esActivo) {
             acciones = `
-                <button class="btn-icon edit" title="Finalizar" onclick="finalizarPrestamo(${p.id})" style="color:#22c55e;"><i class="fa-solid fa-check-circle"></i></button>
-                <button class="btn-icon edit" title="Renovar" onclick="renovarPrestamo(${p.id})"><i class="fa-solid fa-rotate"></i></button>
-                <button class="btn-icon edit" title="Sancionar" onclick="sancionarDesdePrestamo(${p.id})" style="color:#f59e0b;"><i class="fa-solid fa-triangle-exclamation"></i></button>
-                <button class="btn-icon delete" title="Eliminar" onclick="eliminarPrestamo(${p.id})"><i class="fa-solid fa-trash"></i></button>`;
+                <button class="btn-icon edit" title="Finalizar" onclick="finalizarPrestamo(${p.id})" style="color:#16a34a;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </button>
+                <button class="btn-icon edit" title="Renovar" onclick="renovarPrestamo(${p.id})" style="color:#2563eb;">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+                <button class="btn-icon edit" title="Sancionar" onclick="sancionarDesdePrestamo(${p.id})" style="color:#d97706;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </button>
+                <button class="btn-icon delete" title="Eliminar" onclick="eliminarPrestamo(${p.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>`;
         } else {
-            acciones = `<button class="btn-icon delete" title="Eliminar" onclick="eliminarPrestamo(${p.id})"><i class="fa-solid fa-trash"></i></button>`;
+            acciones = `<button class="btn-icon delete" title="Eliminar" onclick="eliminarPrestamo(${p.id})">
+                <i class="fa-solid fa-trash"></i></button>`;
         }
 
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><strong>#${p.id}</strong></td>
             <td><div class="user-cell"><div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div><div><span class="user-cell-name">${p.usuario_nombre} ${p.usuario_apellidos||''}</span><span class="user-cell-id">${p.usuario_matricula||''}</span></div></div></td>
-            <td><span class="material-tag">${materiales}</span></td>
+            <td>
+              <span class="material-tag">${materiales}</span>
+              <div style="margin-top:4px;">${tipoBadge}</div>
+            </td>
             <td>${fechaSol}</td>
             <td>${fechaLim}</td>
             <td><span class="status-pill ${pillClass}"><i class="fa-solid fa-circle" style="font-size:6px;"></i> ${p.estado_general||'N/A'}</span></td>
@@ -316,8 +360,38 @@ async function cargarSelectMateriales() {
 }
 
 // ====== CREAR PRÉSTAMO ======
+function ocultarConflictos() {
+    const alert = document.getElementById('conflictosAlert');
+    if (alert) alert.classList.add('hidden');
+    const lista = document.getElementById('conflictosLista');
+    if (lista) lista.innerHTML = '';
+}
+
+function mostrarConflictos(conflictos) {
+    const alertDiv = document.getElementById('conflictosAlert');
+    const lista    = document.getElementById('conflictosLista');
+    if (!alertDiv || !lista) {
+        // fallback: alert nativo
+        alert('⚠️ Conflicto de reserva:\n' + conflictos.map(c =>
+            `• ${c.material} (${c.tipo}) \u2014 reservado hasta ${new Date(c.reservado_hasta).toLocaleString('es-MX')} por ${c.reservado_por}`
+        ).join('\n'));
+        return;
+    }
+    lista.innerHTML = conflictos.map(c => `
+        <li class="conflicto-item">
+            <strong>${c.material}</strong>
+            <span style="background:#fef3c7; color:#92400e; padding:1px 7px; border-radius:8px; font-size:0.78rem; margin-left:6px;">${c.tipo}</span><br>
+            <span style="font-size:0.82rem;">
+                <i class="fa-solid fa-user" style="color:#d97706;"></i> ${c.reservado_por} &nbsp;—&nbsp;
+                <i class="fa-solid fa-calendar-xmark" style="color:#d97706;"></i> Reservado hasta: <strong>${new Date(c.reservado_hasta).toLocaleString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</strong>
+            </span>
+        </li>`).join('');
+    alertDiv.classList.remove('hidden');
+    alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 async function savePrestamo() {
-    const usuario_id = document.getElementById('prestamoUsuario').value;
+    const usuario_id   = document.getElementById('prestamoUsuario').value;
     const fecha_limite = document.getElementById('prestamoFechaLimite').value;
     const observaciones = document.getElementById('prestamoObservaciones').value;
 
@@ -333,14 +407,18 @@ async function savePrestamo() {
         alert('⚠️ Completa todos los campos obligatorios'); return;
     }
 
+    // Limpiar conflictos previos
+    ocultarConflictos();
+
     try {
-        const res = await fetch('/api/prestamo', {
+        const res  = await fetch('/api/prestamo', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ usuario_id, material_ids, fecha_limite, observaciones })
         });
         const data = await res.json();
+
         if (data.success) {
-            alert('✅ ' + data.mensaje);
+            // Limpiar formulario
             document.getElementById('prestamoUsuario').value = '';
             document.getElementById('prestamoFechaLimite').value = '';
             document.getElementById('prestamoObservaciones').value = '';
@@ -349,8 +427,37 @@ async function savePrestamo() {
             if (sel) sel.value = '';
             toggleFormPrestamo();
             cargarPrestamos(); cargarStatsPrestamos(); cargarSelectMateriales();
-        } else { alert('❌ ' + (data.message || data.error)); }
+            // Toast de éxito
+            mostrarToastAdmin('✅ Préstamo registrado correctamente.', 'success');
+        } else if (data.conflicto && data.conflictos?.length > 0) {
+            // Mostrar alerta visual de conflictos
+            mostrarConflictos(data.conflictos);
+        } else {
+            alert('❌ ' + (data.message || data.error));
+        }
     } catch (err) { alert('❌ Error: ' + err.message); }
+}
+
+// Toast para admin panel
+function mostrarToastAdmin(mensaje, tipo) {
+    const colors = {
+        success: { bg:'#f0fdf4', border:'#bbf7d0', color:'#15803d' },
+        error:   { bg:'#fef2f2', border:'#fecaca', color:'#dc2626' },
+    };
+    const c = colors[tipo] || colors.success;
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.style.cssText = `background:${c.bg}; border:1px solid ${c.border}; color:${c.color};
+        padding:12px 18px; border-radius:10px; font-size:0.9rem; font-weight:500;
+        box-shadow:0 4px 12px rgba(0,0,0,0.10); animation:alertSlideDown 0.3s ease-out; max-width:340px;`;
+    toast.textContent = mensaje;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
 }
 
 // ====== FINALIZAR ======

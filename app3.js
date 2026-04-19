@@ -39,19 +39,19 @@ function contarTotalUsuarios() {
 
 /////////////////////////////////////codigo para mostrar el modal de usuarios registrados y su informacion en una tabla/////////////////////////////////////
 function toggleModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.toggle('hidden');
-    }
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.toggle('hidden');
+  }
 }
 
 // 2. Cerrar el modal al hacer clic en la "X" o fuera del contenido
-window.onclick = function(event) {
-    const modal = document.getElementById('modalUsuarios');
-    // Si el usuario hace clic en el overlay (fondo oscuro), se cierra
-    if (event.target == modal) {
-        toggleModal('modalUsuarios');
-    }
+window.onclick = function (event) {
+  const modal = document.getElementById('modalUsuarios');
+  // Si el usuario hace clic en el overlay (fondo oscuro), se cierra
+  if (event.target == modal) {
+    toggleModal('modalUsuarios');
+  }
 }
 
 // Función para consultar y mostrar los usuarios registrados
@@ -66,7 +66,7 @@ function consultarUsuarios() {
       if (data.success) {
         console.log("✅ Usuarios registrados:", data.usuarios);
         const tablaImprimir = document.getElementById("tablaUsuariosBody");
-        
+
         if (!tablaImprimir) {
           console.error("❌ Elemento con id 'tablaUsuariosBody' no encontrado");
           return;
@@ -79,10 +79,10 @@ function consultarUsuarios() {
 
         data.usuarios.forEach((usuario) => {
           const fila = document.createElement("tr");
-          
+
           // Definimos el color del badge según el estatus
           const estatusClass = usuario.estatus === 'Activo' ? 'active' : 'inactive';
-          
+
           fila.innerHTML = `
             <td><strong>${usuario.nombre} ${usuario.apellidos}</strong></td>
             <td>${usuario.email}</td>
@@ -95,7 +95,7 @@ function consultarUsuarios() {
                 </span>
             </td>
             <td class="actions">
-                <button class="btn-icon edit" title="Editar" onclick="editarUsuario(${usuario.id})">
+                <button class="btn-icon edit" title="Editar Estado" onclick="editarUsuario(${usuario.id}, '${usuario.estatus}')">
                     <i class="fa-regular fa-pen-to-square"></i>
                 </button>
                 <button class="btn-icon delete" title="Eliminar" onclick="eliminarUsuario(${usuario.id})">
@@ -142,6 +142,41 @@ function consultarUsuarioPorID(id) {
     });
 }
 
+function editarUsuario(id, estatusActual) {
+  const nuevoEstatus = estatusActual === 'Activo' ? 'Sancionado' : 'Activo';
+  let motivo = "";
+
+  if (nuevoEstatus === 'Sancionado') {
+    motivo = prompt("El usuario cambiará a Sancionado. Ingrese el motivo de la sanción:");
+    if (motivo === null) return; // Se canceló la acción
+    if (motivo.trim() === '') motivo = 'Sancionado por administrador';
+  } else {
+    if (!confirm("¿Está seguro que desea cambiar el estado del usuario a Activo?")) {
+      return;
+    }
+  }
+
+  fetch(`http://localhost:3001/api/usuario/${id}/estatus`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ estatus: nuevoEstatus, motivo_sancion: motivo })
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert('✅ ' + data.mensaje);
+        consultarUsuarios(); // Refrescar la tabla
+        contarTotalUsuarios(); // Refrescar los totales
+      } else {
+        alert('❌ ' + (data.error || 'Error al cambiar estatus'));
+      }
+    })
+    .catch((error) => {
+      console.error("Error de conexión:", error);
+      alert("Error al conectar con el servidor");
+    });
+}
+
 function eliminarUsuario(id) {
   if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
     fetch(`/api/usuario/${id}`, {
@@ -171,6 +206,8 @@ function eliminarUsuario(id) {
 window.onload = () => {
   contarTotalUsuarios();
   cargarStatsCard();
+  contarTotalDisciplinas();
+  contarTotalEntrenadores()
 };
 
 // Cargar estadísticas reales en la tarjeta azul de préstamos
@@ -184,9 +221,30 @@ async function cargarStatsCard() {
       const activos = data.abiertos + data.retraso;
       document.getElementById('cardPrestamosActivos').textContent = activos;
       document.getElementById('cardVencenHoy').textContent = data.vencen_hoy;
-      document.getElementById('cardVencidos').textContent = data.vencidos_real;
+
+      // Combinando Vencidos y Finalizados (cerrados) en la misma variable
+      document.getElementById('cardVencidos').textContent = Number(data.vencidos_real) + Number(data.cerrados);
     }
   } catch (err) {
     console.error('Error cargando stats de préstamos:', err);
   }
+}
+// Función para contar el total de entrenadores registrados
+
+async function contarTotalEntrenadores() {
+    try {
+      const res = await fetch('/api/entrenador');
+      const data = await res.json();
+      
+      //verificar que la respuesta sea exitosa y que contenga el número total de entrenadores
+      if (data.success) {
+        const elementoTarjeta = document.getElementById('totalEntrenadores');
+        if (elementoTarjeta) {
+          //Usamos .length para obtener el número total de entrenadores registrados
+          elementoTarjeta.textContent = data.entrenadores.length;
+        }
+      }
+    } catch (err) {
+      console.error('Error contando entrenadores:', err);
+    }
 }

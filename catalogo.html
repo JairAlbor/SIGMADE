@@ -3,40 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Catálogo de Material</title>
+    <title>Catálogo de Material – SIGMADE</title>
+    <meta name="description" content="Catálogo de materiales deportivos disponibles para préstamo en SIGMADE." />
     <link rel="stylesheet" href="css/nav-bar.css" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/catalogo.css">
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-           <script src="https://unpkg.com/lucide@latest"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
   </head>
   <body>
+    <!-- ─── NAVBAR ─────────────────────────────────────────── -->
     <nav class="navbar">
       <div class="logo">SIGMADE</div>
-
       <ul class="nav-menu">
-        <li
-          class="nav-item"
-          onclick="irAInicio()"
-        >
-          Inicio
+        <li class="nav-item" onclick="irAInicio()">
+          <i class="fa-solid fa-house" style="margin-right:5px;"></i>Inicio
         </li>
-        <li class="nav-item active">Catalogo</li>
-        <li class="nav-item" onclick="window.location.href = 'profile.html'">
-          Perfil
+        <li class="nav-item active">
+          <i class="fa-solid fa-box-open" style="margin-right:5px;"></i>Catálogo
+        </li>
+        <li class="nav-item" onclick="window.location.href='profile.html'">
+          <i class="fa-solid fa-user-circle" style="margin-right:5px;"></i>Perfil
         </li>
       </ul>
-
       <div class="top-bar-user">
         <div class="notification-wrapper">
           <i data-lucide="bell" class="icon-bell"></i>
           <span class="notification-dot"></span>
         </div>
-
         <div class="user-pill">
           <div class="user-avatar">
             <i data-lucide="user" class="icon-user"></i>
@@ -45,101 +39,169 @@
         </div>
       </div>
     </nav>
+
+    
+    <!-- ─── CONTENIDO ─────────────────────────────────────── -->
     <div class="form-container">
-  <div class="header-catalogo">
-    <h1>Catálogo de Material</h1>
-   
-  </div>
 
-  <div id="contenedor-formulario" class="form-card hidden">
-    <h3>Nuevo Material</h3>
-    <div class="form-grid">
-      <form id="formArticulo">
-        <input type="text" name="nombreArticulo" id="nombreArticulo" placeholder="Nombre del artículo" />
-        
-        <select id="disciplina" name="disciplina">
-          <option value="">Seleccionar disciplina</option>
-          <option value="1">Fútbol</option>
-          <option value="2">Básquetbol</option>
-          <option value="3">Ajedrez</option>
-          <option value="4">Escolta</option>
-        </select>
-        
-        <select name="estado" id="estado">
-          <option value="">Seleccionar estado</option>
-          <option value="Nuevo">Nuevo</option>
-          <option value="Bueno">Bueno</option>
-          <option value="Regular">Regular</option>
-          <option value="Muy-desgastado">Muy Desgastado</option>
-          <option value="Roto">Roto</option>
-        </select>
-        
-        <select name="tipoMaterial" id="tipoMaterial">
-          <option value="">Seleccionar tipo de material</option>
-          <option value="Material deportivo">Material deportivo</option>
-          <option value="Cancha">Cancha</option>
-        </select>
-        
-        <label for="imagen">Ingresa una imagen del artículo</label>
-        <input type="file" id="imagen" name="imagen" accept="image/*" />
-      
-    </div>
-    
-    <div class="form-actions">
-      <button id="btn-cancelar" class="btn-secundario">Cancelar</button>
-      <button  onclick="guardarArticulo()" type="submit" id="btn-exito" class="btn-exito">Guardar Material</button>
-    </div>
-  </form>
-  
-  </div>
-  <div class="tabla-container">
-    
-    <div class="controls-container">
-  <div class="search-bar-container">
-        <div class="search-input-wrapper">
+      <!-- Header -->
+      <div class="header-catalogo">
+        <i class="fa-solid fa-boxes-stacked" style="color:#fff; font-size:1.5rem;"></i>
+        <h1>Catálogo de Material</h1>
+      </div>
+
+      <!-- Banner solo lectura (se muestra solo a usuarios no-Admin) -->
+      <div id="bannerSoloLectura" class="readonly-banner hidden">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Estás viendo el catálogo en modo solo lectura. Solo el administrador puede agregar o modificar materiales.</span>
+      </div>
+
+      <!-- ─── FORMULARIO AGREGAR MATERIAL ─────────────────── -->
+      <div id="contenedor-formulario" class="form-card hidden">
+        <h3>
+          <i class="fa-solid fa-circle-plus"></i>
+          Registrar Nuevo Material
+        </h3>
+
+        <form id="formArticulo" onsubmit="return false;">
+          <div class="form-grid-catalogo">
+
+            <!-- Nombre -->
+            <div class="form-field-cat">
+              <label for="nombreArticulo">
+                <i class="fa-solid fa-tag"></i> Nombre del artículo *
+              </label>
+              <input type="text" id="nombreArticulo" name="nombreArticulo"
+                     placeholder="Ej. Balón de fútbol" required />
+            </div>
+
+            <!-- Cantidad -->
+            <div class="form-field-cat">
+              <label for="cantidadArticulo">
+                <i class="fa-solid fa-hashtag"></i> Cantidad *
+              </label>
+              <input type="number" id="cantidadArticulo" name="cantidadArticulo"
+                     placeholder="1" min="1" value="1" required />
+            </div>
+
+            <!-- Disciplina -->
+            <div class="form-field-cat">
+              <label for="disciplina">
+                <i class="fa-solid fa-dumbbell"></i> Disciplina *
+              </label>
+              <select id="disciplina" name="disciplina" required>
+                <option value="">Seleccionar disciplina…</option>
+              </select>
+            </div>
+
+            <!-- Estado -->
+            <div class="form-field-cat">
+              <label for="estado">
+                <i class="fa-solid fa-gauge-high"></i> Estado del artículo *
+              </label>
+              <select name="estado" id="estado" required>
+                <option value="">Seleccionar estado…</option>
+                <option value="Nuevo">Nuevo</option>
+                <option value="Bueno">Bueno</option>
+                <option value="Regular">Regular</option>
+                <option value="Muy-desgastado">Muy Desgastado</option>
+                <option value="Roto">Roto</option>
+              </select>
+            </div>
+
+            <!-- Tipo de material -->
+            <div class="form-field-cat">
+              <label for="tipoMaterial">
+                <i class="fa-solid fa-layer-group"></i> Tipo de material *
+              </label>
+              <select name="tipoMaterial" id="tipoMaterial" required>
+                <option value="">Seleccionar tipo…</option>
+                <option value="Material deportivo">Material deportivo</option>
+                <option value="Cancha">Cancha</option>
+              </select>
+            </div>
+
+            <!-- Imagen (opcional) -->
+            <div class="form-field-cat">
+              <label for="imagen">
+                <i class="fa-solid fa-image"></i> Imagen del artículo (opcional)
+              </label>
+              <input type="file" id="imagen" name="imagen" accept="image/*" />
+            </div>
+
+            <!-- Descripción (ancho completo) -->
+            <div class="form-field-cat full-width">
+              <label for="descripcionArticulo">
+                <i class="fa-solid fa-align-left"></i> Descripción
+              </label>
+              <textarea id="descripcionArticulo" name="descripcionArticulo"
+                        placeholder="Describe el artículo: características, condiciones de uso, observaciones importantes…"
+                        rows="3"></textarea>
+            </div>
+
+          </div><!-- /form-grid-catalogo -->
+
+          <div class="form-actions-cat">
+            <button id="btn-cancelar" type="button" class="btn-secundario">
+              <i class="fa-solid fa-xmark"></i> Cancelar
+            </button>
+            <button onclick="guardarArticulo()" type="submit" id="btn-exito" class="btn-exito">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar Material
+            </button>
+          </div>
+        </form>
+      </div>
+      <!-- /formulario -->
+
+      <!-- ─── TABLA DE MATERIALES ──────────────────────────── -->
+      <div class="tabla-container">
+
+        <!-- Controles: búsqueda + agregar + stats -->
+        <div class="controls-container">
+          <div class="search-input-wrapper">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" placeholder="Buscar material..." id="searchMaterial">
-        </div>
-    </div>
- <button id="btn-abrir-formulario" class="btn-principal">
-      + Agregar Material
-    </button>
-    <div class="stats-cards">
-        <div class="stat-card total">
-           
-            <span class="stat-label">Total artículos</span>
-             <span class="stat-number" id="articulos"></span>
-            
-        </div>
-        <div class="stat-card available">
-            
-            <span class="stat-label">Disponibles</span>
-            <span class="stat-number" id="disponibles"></span>
-        
-        </div>
-    </div>
-    </div>
-  
+            <input type="text" placeholder="Buscar material, disciplina o tipo…" id="searchMaterial">
+          </div>
 
-    <div class="table-responsive">
-    <table class="material-table">
-        <thead>
-            <tr>
-                <th>Artículo</th>
-                <th>Categoría</th>
-                <th>Tipo Material</th>
-                <th>Estado</th>
-                <th>Disponible</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="tabla-cuerpo">
+          <button id="btn-abrir-formulario" class="btn-principal">
+            <i class="fa-solid fa-plus"></i> Agregar Material
+          </button>
+
+          <div class="stats-cards">
+            <div class="stat-card total">
+              <span class="stat-label">Total</span>
+              <span class="stat-number" id="articulos">–</span>
+            </div>
+            <div class="stat-card available">
+              <span class="stat-label">Disponibles</span>
+              <span class="stat-number" id="disponibles">–</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-responsive">
+          <table class="material-table">
+            <thead>
+              <tr>
+                <th><i class="fa-solid fa-box"></i> Artículo</th>
+                <th><i class="fa-solid fa-hashtag"></i> Cant.</th>
+                <th><i class="fa-solid fa-dumbbell"></i> Categoría</th>
+                <th><i class="fa-solid fa-layer-group"></i> Tipo</th>
+                <th><i class="fa-solid fa-gauge-high"></i> Estado</th>
+                <th><i class="fa-solid fa-circle-check"></i> Disponible</th>
+                <th><i class="fa-solid fa-align-left"></i> Descripción</th>
+                <th id="th-acciones"><i class="fa-solid fa-sliders"></i> Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-cuerpo">
+              <!-- Cargado dinámicamente -->
             </tbody>
-    </table>
-</div>
-</div>
-</div>
+          </table>
+        </div>
 
+      </div><!-- /tabla-container -->
+    </div><!-- /form-container -->
 
     <script>
       lucide.createIcons();
