@@ -11,12 +11,15 @@ window.addEventListener('DOMContentLoaded', function () {
   cargarArticulos();
   contarTotalMateriales();
   contarDisponibles();
-  contarTotalUsuarios();
+  if (typeof contarTotalUsuarios === 'function') contarTotalUsuarios();
+  cargarDisciplinasSelect();
 
   //  contarDisponibles(); // Llamamos a la función para contar disponibles al cargar la página
   // Puedes agregar todas las que quieras
 });
 
+let isEditing = false;
+let editId = null;
 
 //window.onload = contarDisponibles;
 
@@ -117,32 +120,132 @@ async function loginUsuario() {
 
 async function guardarArticulo() {
   const nombre = document.getElementById("nombreArticulo").value;
-  const disciplina = document.getElementById("disciplina").value;
+  const disciplina_id = document.getElementById("disciplina").value;
   const estado = document.getElementById("estado").value;
   const tipoMaterial = document.getElementById("tipoMaterial").value;
+  const cantidad = document.getElementById("cantidadArticulo").value;
+  const descripcionArticulo = document.getElementById("descripcionArticulo").value;
 
-  fetch("/api/articulo", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${localStorage.getItem('userToken')}`
-    },
-    body: JSON.stringify({ nombre, disciplina, estado, tipoMaterial }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        alert("Artículo registrado correctamente");
-        document.getElementById("formArticulo").reset();
-        cargarArticulos(); // Refrescar la lista después de guardar
-      } else {
-        alert("Error al registrar el artículo: " + data.message);
-      }
-    })
-    .catch((error) => {
-      console.error("Error de conexión:", error);
-      alert("Error al conectar con el servidor");
+  if (!nombre || !cantidad) {
+    alert("⚠️ Por favor completa el Nombre y la Cantidad del material (*)");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("nombre", nombre);
+  formData.append("disciplina_id", disciplina_id);
+  formData.append("estado", estado);
+  formData.append("tipoMaterial", tipoMaterial);
+  formData.append("cantidad", cantidad);
+  formData.append("descripcionArticulo", descripcionArticulo);
+
+  const fileInput = document.getElementById("imagen");
+  if (fileInput && fileInput.files[0]) {
+    formData.append("imagen", fileInput.files[0]);
+  }
+
+  try {
+    const url = isEditing
+      ? `http://localhost:3001/api/articulo/${editId}`
+      : "http://localhost:3001/api/articulo";
+
+    const method = isEditing ? "PUT" : "POST";
+
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+      },
+      body: formData,
     });
+
+    const data = await response.json();
+    if (data.success) {
+      alert(isEditing ? "✅ Material actualizado" : "✅ Artículo registrado correctamente");
+      resetearFormulario();
+      cargarArticulos();
+      contarTotalMateriales();
+      contarDisponibles();
+    } else {
+      alert("❌ Error: " + data.error);
+    }
+  } catch (error) {
+    console.error("Error de conexión:", error);
+    alert("Error al conectar con el servidor");
+  }
+}
+
+function resetearFormulario() {
+  isEditing = false;
+  editId = null;
+  document.getElementById("formArticulo").reset();
+  document.getElementById("contenedor-formulario").classList.add("hidden");
+  const titulo = document.getElementById("form-titulo");
+  if (titulo) {
+    titulo.innerHTML = '<i class="fa-solid fa-circle-plus"></i> Registrar Nuevo Material';
+  }
+}
+
+async function editarMaterial(id) {
+  try {
+    const response = await fetch(`http://localhost:3001/api/articulo/${id}`, {
+      headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      const art = data.articulo;
+
+      // Cambiar modo a edición
+      isEditing = true;
+      editId = id;
+
+      // Llenar campos
+      document.getElementById("nombreArticulo").value = art.nombre;
+      document.getElementById("cantidadArticulo").value = 1; // Por defecto 1 para editar por grupo o individual
+      document.getElementById("disciplina").value = art.disciplina_id || "";
+      document.getElementById("estado").value = art.estado || "Nuevo";
+      document.getElementById("tipoMaterial").value = art.tipoMaterial || "";
+      document.getElementById("descripcionArticulo").value = art.descripcion || "";
+
+      // Cambiar UI
+      document.getElementById("form-titulo").innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Material';
+      document.getElementById("contenedor-formulario").classList.remove("hidden");
+      document.getElementById("contenedor-formulario").scrollIntoView({ behavior: 'smooth' });
+    } else {
+      alert("Error al cargar datos: " + data.error);
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error de conexión");
+  }
+}
+
+async function cargarDisciplinasSelect() {
+  const select = document.getElementById("disciplina");
+  if (!select) return;
+
+  try {
+    const response = await fetch("http://localhost:3001/api/disciplina", {
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem('userToken')}`
+      }
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      select.innerHTML = '<option value="">Seleccionar disciplina...</option>';
+      data.disciplinas.forEach((d) => {
+        const option = document.createElement("option");
+        option.value = d.id;
+        option.textContent = d.nombre;
+        select.appendChild(option);
+      });
+      console.log("✅ Disciplinas cargadas en el select");
+    }
+  } catch (error) {
+    console.error("Error al cargar disciplinas:", error);
+  }
 }
 
 function cargarArticulos() {
@@ -156,25 +259,28 @@ function cargarArticulos() {
         tablaCuerpo.innerHTML = ""; // Limpiamos solo las filas
 
         data.articulos.forEach((articulo) => {
-          // Lógica para el color del badge (basada en tu CSS)
-          // Si el dato viene de una BD, podrías comparar por ID o por nombre
-          const badgeClass =
-            articulo.disciplina_id === "Deporte"
-              ? "badge-deporte"
-              : "badge-libro";
-
           const fila = document.createElement("tr");
+
+          // Imagen con fallback si no existe
+          const imgUrl = articulo.imagen ? articulo.imagen : 'img/placeholder-material.png';
+
           fila.innerHTML = `
+            <td>
+              <img src="${imgUrl}" alt="${articulo.nombre_material}" 
+                   style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+            </td>
             <td><strong>${articulo.nombre_material}</strong></td>
-            <td>${articulo.nombre_disciplina}</span></td>
+            <td>${articulo.total_unidades}</td>
+            <td><span class="badge-deporte">${articulo.nombre_disciplina || 'General'}</span></td>
             <td>${articulo.tipoMaterial}</td>
             <td>${articulo.estado}</td>
-            <td class="text-green">${articulo.disponible || 0}</td>
+            <td class="text-green">${articulo.unidades_disponibles || 0} de ${articulo.total_unidades}</td>
+            <td><small>${articulo.descripcion || 'Sin descripción'}</small></td>
             <td class="actions">
-                <button class="btn-icon edit" onclick="editarMaterial(${articulo.id})">
+                <button class="btn-icon edit" onclick="editarMaterial(${articulo.id_representativo})">
                     <i class="fa-regular fa-pen-to-square"></i>
                 </button>
-                <button class="btn-icon delete" onclick="eliminarMaterial(${articulo.id})">
+                <button class="btn-icon delete" onclick="eliminarMaterial(${articulo.id_representativo})">
                     <i class="fa-regular fa-trash-can"></i>
                 </button>
             </td>
@@ -248,66 +354,28 @@ function contarDisponibles() {
     });
 }
 
-//funcion para editar material
-function editarMaterial(id) {
-  // Aquí podrías abrir un modal o redirigir a una página de edición
-  //aun falta hacer un modal que pida la informacion nueva del articulo, pero en teoria con esto de manera
-  //provicional ya podra actualizar
-  const nuevoNombre = prompt("Ingrese el nuevo nombre del artículo:");
-  const nuevaDisciplina = prompt("Ingrese la nueva disciplina:");
-  const nuevoEstado = prompt("Ingrese el nuevo estado:");
-  const nuevaDisponibilidad = prompt("¿Está disponible? (Sí/No)");
-
-  if (nuevoNombre && nuevaDisciplina && nuevoEstado && nuevaDisponibilidad) {
-    fetch(`/api/articulo/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem('userToken')}`
-      },
-      body: JSON.stringify({
-        nombre: nuevoNombre,
-        disciplina: nuevaDisciplina,
-        estado: nuevoEstado,
-        disponible: nuevaDisponibilidad.toLowerCase() === "sí" ? 1 : 0,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          alert("Artículo editado correctamente");
-          cargarArticulos(); // Refrescar la lista después de editar
-          contarDisponibles(); // Actualizar disponibles después de editar
-        } else {
-          alert("Error al editar el artículo: " + data.error);
-        }
-      })
-      .catch((error) => {
-        console.error("Error de conexión:", error);
-        alert("Error al conectar con el servidor");
-      }
-      );
-  } else {
-    alert("Todos los campos son obligatorios para editar el artículo.");
-  }
-}
-
 //funcion para eliminar material
 function eliminarMaterial(id) {
-  if (confirm("¿Estás seguro de eliminar este material?")) {
-    fetch(`/api/articulo/${id}`, {
+  const cantidad = prompt("¿Cuántas unidades deseas eliminar?\n(Escribe un número o 'todas')", "1");
+
+  if (cantidad === null) return; // Cancelado por el usuario
+
+  const queryParam = cantidad.toLowerCase() === 'todas' ? 'todas' : cantidad;
+
+  if (confirm(`¿Estás seguro de eliminar ${queryParam === 'todas' ? 'todas las unidades' : queryParam + ' unidad(es)'}?`)) {
+    fetch(`/api/articulo/${id}?cantidad=${queryParam}`, {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          alert("Artículo eliminado correctamente");
-          cargarArticulos(); // Refrescar la lista después de eliminar
-          contarTotalMateriales(); // Actualizar el total después de eliminar
-          //   contarDisponibles(); // Actualizar disponibles después de eliminar
+          alert("✅ " + data.mensaje);
+          cargarArticulos();
+          contarTotalMateriales();
+          contarDisponibles();
         } else {
-          alert("Error al eliminar el artículo: " + data.error);
+          alert("❌ Error: " + data.error);
         }
       })
       .catch((error) => {
@@ -347,32 +415,4 @@ async function probarRutaProtegida() {
   }
 }
 
-// ============== FUNCIÓN PARA PROBAR EL TOKEN (JWT) ==============
-async function probarRutaProtegida() {
-  const token = localStorage.getItem('userToken');
-  if (!token) {
-    alert("⚠️ No hay token guardado. Debes iniciar sesión primero.");
-    return;
-  }
 
-  try {
-    const response = await fetch("http://localhost:3001/api/test", {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` // Aquí enviamos el token a la ruta protegida
-      }
-    });
-    const data = await response.json();
-
-    if (data.success) {
-      alert("✅ Éxito:\n" + data.message + "\n\nDatos desde el token: " + JSON.stringify(data.datosDelToken, null, 2));
-      console.log("Prueba superada:", data);
-    } else {
-      alert("❌ Denegado:\n" + data.message);
-    }
-  } catch (error) {
-    console.error("Error al probar token:", error);
-    alert("Error de red intentando probar el token.");
-  }
-}

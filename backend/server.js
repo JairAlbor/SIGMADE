@@ -59,6 +59,26 @@ const upload = multer({ storage: storage });
         await query(`ALTER TABLE material MODIFY COLUMN estado ENUM('Nuevo','Bueno','Regular','Dañado','Mantenimiento','Eliminado') DEFAULT 'Bueno'`);
         console.log("✅ ENUM de estado en material actualizado.");
 
+        // Asegurar columnas en tabla 'prestamo'
+        const colsPrestamo = await query("SHOW COLUMNS FROM prestamo LIKE 'fecha_entrega'");
+        if (colsPrestamo.length === 0) {
+            await query("ALTER TABLE prestamo ADD COLUMN fecha_entrega DATETIME DEFAULT NULL");
+            console.log("✅ Columna 'fecha_entrega' agregada a la tabla prestamo.");
+        }
+
+        const colSol = await query("SHOW COLUMNS FROM prestamo LIKE 'fecha_solicitud'");
+        if (colSol.length === 0) {
+            await query("ALTER TABLE prestamo ADD COLUMN fecha_solicitud DATETIME DEFAULT CURRENT_TIMESTAMP");
+            console.log("✅ Columna 'fecha_solicitud' agregada a la tabla prestamo.");
+        }
+
+        // Asegurar columnas en tabla 'usuario'
+        const colSancion = await query("SHOW COLUMNS FROM usuario LIKE 'motivo_sancion'");
+        if (colSancion.length === 0) {
+            await query("ALTER TABLE usuario ADD COLUMN motivo_sancion TEXT DEFAULT NULL");
+            console.log("✅ Columna 'motivo_sancion' agregada a la tabla usuario.");
+        }
+
     } catch (err) {
         console.error("⚠️ Error verificando tablas:", err);
     }
@@ -342,13 +362,225 @@ app.get('/api/usuario/num', verificarToken, (req, res) => {
 
 
 
-// insertar un nuevo ARTÍCULO (Soporte Multiple Unidades + Imagen)
+// ======================== PRÉSTAMOS (Admin) ========================
+// 1. Obtener materiales agrupados por DISPONIBILIDAD (Para el formulario de préstamos)
+app.get('/api/articulo/disponibles', verificarToken, async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                m.nombre AS nombre_material, 
+                d.nombre AS nombre_disciplina, 
+                m.disciplina_id,
+                COUNT(*) AS cantidad_disponible,
+                GROUP_CONCAT(m.id) AS ids_disponibles
+            FROM material m
+            LEFT JOIN disciplina d ON m.disciplina_id = d.id
+            WHERE m.disponible = 'Libre' AND m.estado != 'Eliminado'
+            GROUP BY m.nombre, m.disciplina_id, d.nombre
+        `;
+        const results = await query(sql);
+        res.json({ success: true, materiales: results });
+    } catch (err) {
+        console.error('❌ Error disponibles:', err);
+        res.status(500).json({ success: false, error: 'Error al obtener materiales disponibles' });
+    }
+});
+
+// 2. Crear estadísticas de préstamos (Admin) - DEBE IR ANTES DE /api/prestamo/:id
+app.get('/api/prestamo/stats', verificarToken, async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                COUNT(*) AS total,
+                -- Activos: En curso
+                IFNULL(SUM(CASE WHEN estado_general IN ('Abierto', 'Activo', 'Renovado') THEN 1 ELSE 0 END), 0) AS abiertos,
+                
+                -- Vencidos: Mezcla de retrasados activos Y finalizados Y sancionados (petición de usuario)
+                IFNULL(SUM(CASE 
+                    WHEN (estado_general IN ('Abierto', 'Activo', 'Renovado') AND fecha_limite < NOW()) 
+                         OR estado_general IN ('Finalizado', 'Cerrado', 'Sancionado') THEN 1 ELSE 0 
+                END), 0) AS retraso,
+                
+                -- Finalizados (para uso interno si se requiere separado)
+                IFNULL(SUM(CASE WHEN estado_general IN ('Finalizado', 'Cerrado') THEN 1 ELSE 0 END), 0) AS cerrados,
+                
+                -- Vencen hoy: Límite es hoy
+                IFNULL(SUM(CASE WHEN DATE(fecha_limite) = CURRENT_DATE THEN 1 ELSE 0 END), 0) AS vencen_hoy
+            FROM prestamo
+        `;
+        const results = await query(sql);
+        
+        console.log('📊 Dashboard Stats calculated:', results[0]);
+
+        res.json({ 
+            success: true, 
+            total: Number(results[0].total) || 0,
+            abiertos: Number(results[0].abiertos) || 0,     // Préstamos Activos
+            retraso: Number(results[0].retraso) || 0,       // Vencidos (incluye finalizados y sancionados)
+            cerrados: Number(results[0].cerrados) || 0,
+            vencen_hoy: Number(results[0].vencen_hoy) || 0  // Vencen hoy
+        });
+    } catch (err) {
+        console.error('❌ Error stats préstamos:', err);
+        res.status(500).json({ success: false, error: 'Error al obtener estadísticas de préstamos' });
+    }
+});
+
+// 3. Obtener todos los préstamos (Admin)
+app.get('/api/prestamo', verificarToken, async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                p.id, p.fecha_solicitud, p.fecha_limite, p.fecha_entrega, p.estado_general, p.observaciones,
+                u.nombre AS usuario_nombre, u.apellidos AS usuario_apellidos, u.identificador AS usuario_matricula,
+                GROUP_CONCAT(m.nombre SEPARATOR ', ') AS materiales
+            FROM prestamo p
+            JOIN usuario u ON p.usuario_id = u.id
+            LEFT JOIN detalle_prestamo dp ON p.id = dp.prestamo_id
+            LEFT JOIN material m ON dp.material_id = m.id
+            GROUP BY p.id
+            ORDER BY p.fecha_solicitud DESC
+        `;
+        const results = await query(sql);
+        res.json({ success: true, prestamos: results });
+    } catch (err) {
+        console.error('❌ Error listado préstamos:', err);
+        res.status(500).json({ success: false, error: 'Error al listar préstamos' });
+    }
+});
+
+// 4. Crear un nuevo préstamo (Admin)
+app.post('/api/prestamo', verificarToken, async (req, res) => {
+    const { usuario_id, material_ids, fecha_limite, observaciones } = req.body;
+    if (!usuario_id || !material_ids || !fecha_limite || material_ids.length === 0) {
+        return res.status(400).json({ success: false, message: 'Faltan datos obligatorios' });
+    }
+    try {
+        const resP = await query(
+            'INSERT INTO prestamo (usuario_id, fecha_solicitud, fecha_limite, estado_general, observaciones) VALUES (?, NOW(), ?, "Abierto", ?)',
+            [usuario_id, fecha_limite, observaciones || '']
+        );
+        const prestamoId = resP.insertId;
+        for (const mId of material_ids) {
+            await query('INSERT INTO detalle_prestamo (prestamo_id, material_id) VALUES (?, ?)', [prestamoId, mId]);
+            await query('UPDATE material SET disponible = "Ocupado" WHERE id = ?', [mId]);
+        }
+        res.json({ success: true, message: 'Préstamo registrado correctamente' });
+    } catch (err) {
+        console.error('❌ Error POST /api/prestamo:', err);
+        res.status(500).json({ success: false, error: 'Error al registrar préstamo' });
+    }
+});
+
+// 5. Finalizar préstamo (POST /api/prestamo/:id/finalizar)
+app.post('/api/prestamo/:id/finalizar', verificarToken, async (req, res) => {
+    const { id } = req.params;
+    const { observaciones } = req.body;
+    try {
+        // 1. Obtener los materiales vinculados antes de marcar como finalizado
+        const materiales = await query('SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ?', [id]);
+        
+        // 2. Actualizar el cabezal del préstamo
+        await query(
+            'UPDATE prestamo SET estado_general = "Finalizado", fecha_entrega = NOW(), observaciones = CONCAT(IFNULL(observaciones,""), ?) WHERE id = ?',
+            [`\n[Finalizado: ${observaciones || 'Sin notas'}]`, id]
+        );
+
+        // 3. Liberar materiales
+        if (materiales.length > 0) {
+            const ids = materiales.map(m => m.material_id);
+            await query('UPDATE material SET disponible = "Libre" WHERE id IN (?)', [ids]);
+        }
+
+        res.json({ success: true, mensaje: 'Préstamo finalizado y materiales liberados' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Error al finalizar préstamo' });
+    }
+});
+
+// 6. Renovar préstamo (PUT /api/prestamo/:id/renovar)
+app.put('/api/prestamo/:id/renovar', verificarToken, async (req, res) => {
+    const { id } = req.params;
+    const { dias } = req.body;
+    try {
+        await query(
+            'UPDATE prestamo SET fecha_limite = DATE_ADD(fecha_limite, INTERVAL ? DAY), estado_general = "Renovado" WHERE id = ?',
+            [dias || 3, id]
+        );
+        res.json({ success: true, mensaje: `Préstamo renovado por ${dias} días adicionales` });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Error al renovar préstamo' });
+    }
+});
+
+// 7. Sancionar usuario desde préstamo (POST /api/prestamo/:id/sancionar)
+app.post('/api/prestamo/:id/sancionar', verificarToken, async (req, res) => {
+    const { id } = req.params;
+    const { motivo } = req.body;
+    try {
+        // Obtener usuario del préstamo
+        const prestamo = await query('SELECT usuario_id FROM prestamo WHERE id = ?', [id]);
+        if (prestamo.length === 0) return res.status(404).json({ success: false, error: 'Préstamo no encontrado' });
+
+        const usuarioId = prestamo[0].usuario_id;
+
+        // Actualizar usuario
+        await query('UPDATE usuario SET estatus = "Sancionado", motivo_sancion = ? WHERE id = ?', [motivo, usuarioId]);
+        
+        // Actualizar préstamo
+        await query('UPDATE prestamo SET estado_general = "Sancionado" WHERE id = ?', [id]);
+
+        res.json({ success: true, mensaje: 'Usuario sancionado correctamente' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Error al aplicar sanción' });
+    }
+});
+
+// 8. Eliminar préstamo (DELETE /api/prestamo/:id)
+app.delete('/api/prestamo/:id', verificarToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        // 1. Verificar si hay materiales que liberar (si el préstamo no estaba finalizado)
+        const prestamo = await query('SELECT estado_general FROM prestamo WHERE id = ?', [id]);
+        if (prestamo.length === 0) return res.status(404).json({ success: false, error: 'Préstamo no encontrado' });
+
+        if (prestamo[0].estado_general !== 'Finalizado') {
+            const materiales = await query('SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ?', [id]);
+            if (materiales.length > 0) {
+                const ids = materiales.map(m => m.material_id);
+                await query('UPDATE material SET disponible = "Libre" WHERE id IN (?)', [ids]);
+            }
+        }
+
+        // 2. Eliminar registros
+        await query('DELETE FROM detalle_prestamo WHERE prestamo_id = ?', [id]);
+        await query('DELETE FROM prestamo WHERE id = ?', [id]);
+
+        res.json({ success: true, mensaje: 'Préstamo eliminado y materiales actualizados' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Error al eliminar préstamo' });
+    }
+});
+
+
+// ========================================================
+// ============ ARTÍCULOS ============
 app.post('/api/articulo', verificarToken, upload.single('imagen'), async (req, res) => {
-    let { nombre, disciplina, estado, tipoMaterial, cantidad, descripcionArticulo } = req.body;
+    console.log('📦 POST /api/articulo - Body:', req.body, 'File:', req.file);
+    let { nombre, disciplina_id, estado, tipoMaterial, cantidad, descripcionArticulo } = req.body;
     const imagen = req.file ? `/uploads/materials/${req.file.filename}` : null;
 
-    if (!nombre || !disciplina) {
-        return res.status(400).json({ success: false, error: 'Campos obligatorios faltantes' });
+    // Convertir disciplina_id vacío o "null" a null real para la BD
+    if (!disciplina_id || disciplina_id === 'null' || disciplina_id === '' || disciplina_id === 'undefined') {
+        disciplina_id = null;
+    }
+
+    if (!nombre) {
+        return res.status(400).json({ success: false, error: 'El nombre del artículo es obligatorio' });
     }
 
     cantidad = parseInt(cantidad) || 1;
@@ -359,7 +591,7 @@ app.post('/api/articulo', verificarToken, upload.single('imagen'), async (req, r
         
         let primerInsertId = null;
         for (let i = 0; i < cantidad; i++) {
-            const resObj = await query(queryStr, [nombre, disciplina, estado, tipoMaterial, imagen, descripcionArticulo]);
+            const resObj = await query(queryStr, [nombre, disciplina_id, estado, tipoMaterial, imagen, descripcionArticulo]);
             if (i === 0) primerInsertId = resObj.insertId;
         }
 
@@ -389,7 +621,13 @@ app.delete('/api/articulo/:id', verificarToken, async (req, res) => {
         const { nombre, disciplina_id } = articulos[0];
         
         // 2. Buscar todos los IDs de ese grupo que no estén eliminados
-        const grupo = await query('SELECT id FROM material WHERE nombre = ? AND disciplina_id = ? AND estado != "Eliminado" ORDER BY id ASC', [nombre, disciplina_id]);
+        // Priorizamos los que están "Libre" para no borrar algo que esté en préstamo
+        // Usamos <=> (null-safe equality) para que funcione con disciplina_id NULL
+        const grupo = await query(`
+            SELECT id FROM material 
+            WHERE nombre = ? AND disciplina_id <=> ? AND estado != "Eliminado" 
+            ORDER BY (disponible = 'Libre') DESC, id ASC
+        `, [nombre, disciplina_id]);
         
         if (grupo.length === 0) return res.status(404).json({ success: false, error: 'Unidades no encontradas' });
         
@@ -445,8 +683,13 @@ app.get('/api/articulo/:id', verificarToken, async (req, res) => {
 app.put('/api/articulo/:id', verificarToken, upload.single('imagen'), async (req, res) => {
     console.log('📦 PUT /api/articulo/:id - Params:', req.params, 'Body:', req.body);
     const { id } = req.params;
-    const { nombre, disciplina_id, estado, tipoMaterial, descripcion } = req.body;
+    let { nombre, disciplina_id, estado, tipoMaterial, descripcion } = req.body;
     const nuevaImagen = req.file ? `/uploads/materials/${req.file.filename}` : null;
+
+    // Convertir disciplina_id vacío o "null" a null real para la BD
+    if (!disciplina_id || disciplina_id === 'null' || disciplina_id === '') {
+        disciplina_id = null;
+    }
 
     try {
         // Obtenemos los datos actuales por si no se sube imagen nueva
@@ -461,7 +704,7 @@ app.put('/api/articulo/:id', verificarToken, upload.single('imagen'), async (req
         const updateSql = `
             UPDATE material 
             SET nombre = ?, disciplina_id = ?, estado = ?, tipoMaterial = ?, imagen = ?, descripcion = ?
-            WHERE nombre = ? AND disciplina_id = ? AND estado != 'Eliminado'
+            WHERE nombre = ? AND disciplina_id <=> ? AND estado != 'Eliminado'
         `;
         
         await query(updateSql, [
@@ -747,6 +990,7 @@ app.get('/api/entrenador/activos', verificarToken, async (req, res) => {
 });
 
 // ============ ARCHIVOS ESTÁTICOS ============
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use(express.static(path.join(__dirname, '..')));
 
 app.get('/', (req, res) => {
@@ -757,10 +1001,12 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📁 Sirviendo archivos desde: ${path.join(__dirname, '..')}`);
-    console.log('\n📡 Rutas API disponibles:');
+    console.log('📡 Rutas API disponibles:');
     console.log('   POST /api/login');
     console.log('   POST /api/usuario');
     console.log('   GET  /api/consultar/articulo');
-    console.log('   POST /api/articulo\n');
+    console.log('   POST /api/articulo');
+    console.log('   GET  /api/articulo/disponibles (NUEVO)');
+    console.log('   POST /api/prestamo (NUEVO)\n');
 });
 

@@ -93,8 +93,8 @@
             <p class="count">5</p>
           </button>
 
-          <button class="card-small">
-            <i class="fa-solid fa-user-gear"></i>
+          <button class="card-small" onclick="openEntrenadores()">
+            <i class="fa-solid fa-user-tie"></i>
             <h3>Entrenadores</h3>
             <p class="count" id="totalEntrenadores"></p>
           </button>
@@ -182,27 +182,39 @@
           <!-- Formulario Nuevo Préstamo (oculto por defecto) -->
           <section id="addPrestamoForm" class="add-form-container hidden">
             <h3><i class="fa-solid fa-file-circle-plus" style="margin-right: 6px;"></i>Registrar Nuevo Préstamo</h3>
-            <div class="form-grid-prestamo">
-              <div class="form-field">
-                <label for="prestamoUsuario">Usuario (Alumno)</label>
-                <select id="prestamoUsuario">
-                  <option value="">Seleccionar usuario...</option>
-                </select>
-              </div>
-              <div class="form-field">
-                <label>Material(es) disponibles</label>
-                <div id="materialesCheckboxContainer" class="materiales-checkbox-list">
-                  <!-- Se llena dinámicamente -->
+            <div class="form-layout-prestamo">
+              <div class="form-info-side">
+                <div class="form-field">
+                  <label for="prestamoUsuario">Usuario (Alumno)</label>
+                  <select id="prestamoUsuario">
+                    <option value="">Seleccionar usuario...</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="prestamoFechaSolicitud">Fecha de Solicitud (Automática)</label>
+                  <input type="datetime-local" id="prestamoFechaSolicitud" readonly style="background: #f3f4f6; cursor: not-allowed;">
+                </div>
+                <div class="form-field">
+                  <label for="prestamoFechaLimite">Fecha Límite de Devolución</label>
+                  <input type="datetime-local" id="prestamoFechaLimite">
                 </div>
               </div>
-              <div class="form-field">
-                <label for="prestamoFechaLimite">Fecha Límite de Devolución</label>
-                <input type="datetime-local" id="prestamoFechaLimite">
+
+              <div class="form-materials-side">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 8px; display: block;">
+                  <i class="fa-solid fa-boxes-stacked" style="margin-right: 6px; color: var(--guinda);"></i>Selección de Materiales
+                </label>
+                <div id="materialesCheckboxContainer" class="materiales-qty-container">
+                  <!-- Se llena dinámicamente -->
+                  <p style="color:#9ca3af; padding:12px; text-align:center;">Cargando materiales...</p>
+                </div>
               </div>
-              <div class="form-field">
-                <label for="prestamoObservaciones">Observaciones</label>
-                <textarea id="prestamoObservaciones" rows="2" placeholder="Notas adicionales sobre el préstamo..."></textarea>
-              </div>
+            </div>
+
+            <!-- Observaciones ocupando todo el ancho -->
+            <div class="form-field full-width" style="margin-top: 1rem;">
+              <label for="prestamoObservaciones">Observaciones</label>
+              <textarea id="prestamoObservaciones" rows="2" placeholder="Notas adicionales sobre el préstamo..." style="width: 100%;"></textarea>
             </div>
           <!-- Alerta de conflictos de fecha -->
           <div id="conflictosAlert" class="conflictos-alert hidden">
@@ -294,6 +306,30 @@
         </div>
         <footer class="modal-footer">
           <button class="btn-secondary" onclick="closeDisciplines()">
+            Cerrar
+          </button>
+        </footer>
+      </div>
+    </div>
+    
+    <!-- Modal para gestión de entrenadores -->
+    <div id="trainerModalOverlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h2>Lista de Entrenadores (Docentes)</h2>
+          <div class="header-actions">
+            <button class="close-modal-btn" onclick="closeEntrenadores()" title="Cerrar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </header>
+        <div class="modal-body">
+          <div id="trainerGrid" class="disciplines-grid">
+            <!-- Se llena dinámicamente -->
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button class="btn-secondary" onclick="closeEntrenadores()">
             Cerrar
           </button>
         </footer>

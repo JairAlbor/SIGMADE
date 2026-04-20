@@ -221,9 +221,9 @@ function eliminarUsuario(id) {
 // Llamamos a las funciones para cargar datos al cargar la página
 window.onload = () => {
   contarTotalUsuarios();
-  cargarStatsCard();
-  contarTotalDisciplinas();
-  contarTotalEntrenadores()
+  // El Dashboard de préstamos ahora se auto-inicializa en modal-eventos.js
+  if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
+  if (typeof contarTotalEntrenadores === 'function') contarTotalEntrenadores();
 };
 
 // ============== FUNCIÓN PARA PROBAR EL TOKEN (JWT) ==============

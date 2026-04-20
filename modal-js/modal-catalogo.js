@@ -34,10 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
         contenedorForm.classList.add('hidden');
     });
 
-    btnGuardar.addEventListener('click', () => {
-        contenedorForm.classList.add('hidden');
-        // Aquí puedes agregar la lógica para guardar el material, por ejemplo, enviar los datos a tu servidor o actualizar la tabla
-    });
+    const btnGuardar = document.getElementById('btn-exito');
+    if (btnGuardar && contenedorForm) {
+        btnGuardar.addEventListener('click', () => {
+             // El cierre del modal ahora lo maneja app.js tras guardar con éxito,
+             // o podemos dejar que se cierre aquí si prefieres un cierre inmediato.
+             // contenedorForm.classList.add('hidden');
+        });
+    }
     function logout() {
         // 1. Opcional: Limpiar datos del usuario (token, nombre, etc.)
         // localStorage.removeItem('userToken');
@@ -46,3 +50,4 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. Redirigir al login
         window.location.href = "index.html"; // Asegúrate de que el nombre del archivo coincida
     }
+});

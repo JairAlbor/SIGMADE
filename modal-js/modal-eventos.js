@@ -82,7 +82,11 @@ function toggleDisciplineForm() {
 
 async function cargarDisciplinas() {
     try {
-        const res = await fetch('/api/disciplina');
+        const res = await fetch('/api/disciplina', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            }
+        });
         const data = await res.json();
         const grid = document.getElementById('disciplineGrid');
         grid.innerHTML = '';
@@ -115,7 +119,11 @@ async function cargarDisciplinas() {
 
 async function cargarEntrenadoresSelect() {
     try {
-        const res = await fetch('/api/entrenador');
+        const res = await fetch('/api/entrenador', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            }
+        });
         const data = await res.json();
         const select = document.getElementById('disciplinaEntrenador');
         if (!select) return;
@@ -140,7 +148,10 @@ async function saveDisciplina() {
     try {
         const res = await fetch('/api/disciplina', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            },
             body: JSON.stringify({ nombre, entrenador_id: entrenador_id || null })
         });
         const data = await res.json();
@@ -162,7 +173,12 @@ async function saveDisciplina() {
 async function eliminarDisciplina(id) {
     if (!confirm('¿Eliminar esta disciplina?')) return;
     try {
-        const res = await fetch(`/api/disciplina/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/disciplina/${id}`, { 
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            }
+        });
         const data = await res.json();
         if (data.success) {
             alert('✅ ' + data.mensaje);
@@ -179,7 +195,11 @@ async function eliminarDisciplina(id) {
 
 async function contarTotalDisciplinas() {
   try {
-    const response = await fetch('/api/disciplina');
+    const response = await fetch('/api/disciplina', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+      }
+    });
     const data = await response.json();
     
     // Verificamos que la consulta haya sido exitosa
@@ -193,6 +213,83 @@ async function contarTotalDisciplinas() {
   } catch (err) {
     console.error('Error al intentar contabilizar disciplinas:', err);
   }
+}
+
+// ======================== ENTRENADORES ========================
+function openEntrenadores() {
+    const modal = document.getElementById('trainerModalOverlay');
+    if (modal) {
+        modal.classList.remove('hidden');
+        renderEntrenadores();
+    } else {
+        console.error("❌ Modal 'trainerModalOverlay' no encontrado");
+    }
+}
+
+function closeEntrenadores() {
+    const modal = document.getElementById('trainerModalOverlay');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function renderEntrenadores() {
+    try {
+        const res = await fetch('/api/entrenador', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            }
+        });
+        const data = await res.json();
+        const grid = document.getElementById('trainerGrid');
+        if (!grid) return;
+        
+        grid.innerHTML = '';
+        if (data.success && data.entrenadores.length > 0) {
+            data.entrenadores.forEach(e => {
+                grid.innerHTML += `
+                    <div class="trainer-card" style="background: white; border: 1px solid #e5e7eb; padding: 1.25rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="background: #f3f4f6; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #6b7280;">
+                                <i class="fa-solid fa-user-tie" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <h4 style="margin: 0; color: #111827; font-size: 1rem;">${e.nombre} ${e.apellidos}</h4>
+                                <p style="margin: 0; color: #6b7280; font-size: 0.85rem;">${e.email}</p>
+                            </div>
+                            <div class="status-pill ${e.estatus === 'Activo' ? 'active' : 'inactive'}" style="font-size: 0.75rem;">
+                                ${e.estatus}
+                            </div>
+                        </div>
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6; display: flex; gap: 1rem;">
+                            <span style="font-size: 0.85rem; color: #4b5563;">
+                                <i class="fa-solid fa-phone" style="margin-right: 4px; color: #9ca3af;"></i> ${e.telefono || 'Sin tel.'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            grid.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">No hay entrenadores registrados</p>';
+        }
+    } catch (err) {
+        console.error('Error al renderizar entrenadores:', err);
+    }
+}
+
+async function contarTotalEntrenadores() {
+    try {
+        const res = await fetch('/api/entrenador', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            const el = document.getElementById('totalEntrenadores');
+            if (el) el.textContent = data.entrenadores.length;
+        }
+    } catch (err) {
+        console.error('Error al contar entrenadores:', err);
+    }
 }
 
 
@@ -215,6 +312,16 @@ function closePrestamos() {
 function toggleFormPrestamo() {
     const form = document.getElementById('addPrestamoForm');
     form.classList.toggle('hidden');
+
+    // Auto-poblar fecha de solicitud al abrir el formulario
+    if (!form.classList.contains('hidden')) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const dateStr = now.toISOString().slice(0, 16);
+        const elSol = document.getElementById('prestamoFechaSolicitud');
+        if (elSol) elSol.value = dateStr;
+    }
+
     // Limpiar alert de conflictos al abrir/cerrar
     ocultarConflictos();
 }
@@ -222,7 +329,9 @@ function toggleFormPrestamo() {
 // ====== CARGAR Y RENDERIZAR ======
 async function cargarPrestamos() {
     try {
-        const res = await fetch('/api/prestamo');
+        const res = await fetch('/api/prestamo', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+        });
         const data = await res.json();
         if (data.success) {
             prestamosData = data.prestamos;
@@ -303,13 +412,21 @@ function renderPrestamos(prestamos) {
 // ====== KPIs ======
 async function cargarStatsPrestamos() {
     try {
-        const res = await fetch('/api/prestamo/stats');
+        const res = await fetch('/api/prestamo/stats', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+        });
         const data = await res.json();
         if (data.success) {
-            document.getElementById('prestamosAbiertos').textContent = data.abiertos;
-            document.getElementById('prestamosVencidos').textContent = data.retraso;
-            document.getElementById('prestamosCerrados').textContent = data.cerrados;
-            document.getElementById('prestamosTotal').textContent = data.total;
+            // Stats dentro del modal de gestión
+            if (document.getElementById('prestamosAbiertos')) document.getElementById('prestamosAbiertos').textContent = data.abiertos;
+            if (document.getElementById('prestamosVencidos')) document.getElementById('prestamosVencidos').textContent = data.retraso;
+            if (document.getElementById('prestamosCerrados')) document.getElementById('prestamosCerrados').textContent = data.cerrados;
+            if (document.getElementById('prestamosTotal')) document.getElementById('prestamosTotal').textContent = data.total;
+
+            // Stats del Dashboard principal (Tarjetas azules)
+            if (document.getElementById('cardPrestamosActivos')) document.getElementById('cardPrestamosActivos').textContent = data.abiertos;
+            if (document.getElementById('cardVencenHoy')) document.getElementById('cardVencenHoy').textContent = data.vencen_hoy;
+            if (document.getElementById('cardVencidos')) document.getElementById('cardVencidos').textContent = data.retraso;
         }
     } catch (err) { console.error('Error stats:', err); }
 }
@@ -317,7 +434,9 @@ async function cargarStatsPrestamos() {
 // ====== SELECTS DINÁMICOS ======
 async function cargarSelectUsuarios() {
     try {
-        const res = await fetch('/api/usuario');
+        const res = await fetch('/api/usuario', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+        });
         const data = await res.json();
         const select = document.getElementById('prestamoUsuario');
         select.innerHTML = '<option value="">Seleccionar usuario...</option>';
@@ -331,7 +450,9 @@ async function cargarSelectUsuarios() {
 
 async function cargarSelectMateriales() {
     try {
-        const res = await fetch('/api/articulo/disponibles');
+        const res = await fetch('/api/articulo/disponibles', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+        });
         const data = await res.json();
         const container = document.getElementById('materialesCheckboxContainer');
 
@@ -348,13 +469,37 @@ async function cargarSelectMateriales() {
         container.innerHTML = '';
         if (data.success && data.materiales.length > 0) {
             data.materiales.forEach(a => {
-                const label = document.createElement('label');
-                label.className = 'material-checkbox-item';
-                label.innerHTML = `<input type="checkbox" name="material_ids" value="${a.id}"> <span>${a.nombre_material} <small style="color:#9ca3af;">(${a.nombre_disciplina||'Sin disc.'})</small></span>`;
-                container.appendChild(label);
+                // Determinar icono
+                let icon = 'fa-box-open';
+                const nombre = a.nombre_material.toLowerCase();
+                if (nombre.includes('balon') || nombre.includes('pelota')) icon = 'fa-volleyball';
+                if (nombre.includes('casaca') || nombre.includes('chaleco')) icon = 'fa-shirt';
+                if (nombre.includes('cono')) icon = 'fa-triangle-exclamation';
+                if (nombre.includes('red')) icon = 'fa-border-all';
+
+                const row = document.createElement('div');
+                row.className = 'material-qty-card';
+                row.innerHTML = `
+                    <div class="mat-card-info" style="display: flex; align-items: center; gap: 12px;">
+                        <div style="background: #eff6ff; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #3b82f6;">
+                            <i class="fa-solid ${icon}"></i>
+                        </div>
+                        <div>
+                            <strong>${a.nombre_material}</strong>
+                            <small>${a.nombre_disciplina || 'General'}</small>
+                        </div>
+                    </div>
+                    <div class="mat-card-controls">
+                        <input type="number" class="mat-qty-input" 
+                            data-ids="${a.ids_disponibles}" 
+                            value="0" min="0" max="${a.cantidad_disponible}">
+                        <span class="mat-qty-max">/ ${a.cantidad_disponible}</span>
+                    </div>
+                `;
+                container.appendChild(row);
             });
         } else {
-            container.innerHTML = '<p style="color:#9ca3af; padding:8px;">No hay materiales disponibles</p>';
+            container.innerHTML = '<p style="color:#9ca3af; padding:12px; text-align:center;">No hay materiales disponibles</p>';
         }
     } catch (err) { console.error('Error:', err); }
 }
@@ -396,12 +541,16 @@ async function savePrestamo() {
     const observaciones = document.getElementById('prestamoObservaciones').value;
 
     let material_ids = [];
-    const cbs = document.querySelectorAll('input[name="material_ids"]:checked');
-    if (cbs.length > 0) material_ids = Array.from(cbs).map(cb => parseInt(cb.value));
-    else {
-        const sel = document.getElementById('prestamoMaterial');
-        if (sel && sel.value) material_ids = [parseInt(sel.value)];
-    }
+    const matInputs = document.querySelectorAll('.mat-qty-input');
+    matInputs.forEach(input => {
+        const qty = parseInt(input.value) || 0;
+        if (qty > 0) {
+            const allIds = input.getAttribute('data-ids').split(',');
+            // Tomamos los primeros N IDs disponibles según la cantidad elegida
+            const selectedIds = allIds.slice(0, qty).map(id => parseInt(id));
+            material_ids.push(...selectedIds);
+        }
+    });
 
     if (!usuario_id || material_ids.length === 0 || !fecha_limite) {
         alert('⚠️ Completa todos los campos obligatorios'); return;
@@ -412,7 +561,11 @@ async function savePrestamo() {
 
     try {
         const res  = await fetch('/api/prestamo', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            },
             body: JSON.stringify({ usuario_id, material_ids, fecha_limite, observaciones })
         });
         const data = await res.json();
@@ -466,7 +619,11 @@ async function finalizarPrestamo(id) {
     if (obs === null) return;
     try {
         const res = await fetch(`/api/prestamo/${id}/finalizar`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            },
             body: JSON.stringify({ observaciones: obs })
         });
         const data = await res.json();
@@ -481,7 +638,11 @@ async function renovarPrestamo(id) {
     if (!dias || isNaN(dias) || parseInt(dias) < 1) return;
     try {
         const res = await fetch(`/api/prestamo/${id}/renovar`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            method: 'PUT', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            },
             body: JSON.stringify({ dias: parseInt(dias) })
         });
         const data = await res.json();
@@ -497,7 +658,11 @@ async function sancionarDesdePrestamo(id) {
     if (!confirm(`¿Sancionar al usuario?\nMotivo: ${motivo}`)) return;
     try {
         const res = await fetch(`/api/prestamo/${id}/sancionar`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+            },
             body: JSON.stringify({ motivo })
         });
         const data = await res.json();
@@ -510,7 +675,10 @@ async function sancionarDesdePrestamo(id) {
 async function eliminarPrestamo(id) {
     if (!confirm('¿Eliminar este préstamo?')) return;
     try {
-        const res = await fetch(`/api/prestamo/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/prestamo/${id}`, { 
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+        });
         const data = await res.json();
         if (data.success) { alert('✅ ' + data.mensaje); cargarPrestamos(); cargarStatsPrestamos(); cargarSelectMateriales(); }
         else alert('❌ ' + data.error);
@@ -550,3 +718,11 @@ function formatFecha(fechaStr) {
     const h12 = (hrs % 12 || 12).toString().padStart(2,'0');
     return `${dia}/${mes}/${f.getFullYear()}<br><small style="color:#9ca3af;">${h12}:${min} ${ampm}</small>`;
 }
+
+// Auto-inicializar estadísticas al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    cargarStatsPrestamos();
+    // Cargar también disciplinas y entrenadores si es necesario para el dashboard principal
+    if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
+    if (typeof contarTotalEntrenadores === 'function') contarTotalEntrenadores();
+});
