@@ -22,11 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Control del formulario (solo si el elemento existe) ─
     if (btnAbrir && contenedorForm) {
-        btnAbrir.addEventListener('click', () => {
+        btnAbrir.onclick = () => {
+            console.log('Abriendo formulario...');
             contenedorForm.classList.remove('hidden');
-            // Scroll suave al formulario
             contenedorForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
+        };
     }
 
     // Ocultar formulario
@@ -34,20 +34,16 @@ document.addEventListener('DOMContentLoaded', () => {
         contenedorForm.classList.add('hidden');
     });
 
-    const btnGuardar = document.getElementById('btn-exito');
-    if (btnGuardar && contenedorForm) {
-        btnGuardar.addEventListener('click', () => {
-             // El cierre del modal ahora lo maneja app.js tras guardar con éxito,
-             // o podemos dejar que se cierre aquí si prefieres un cierre inmediato.
-             // contenedorForm.classList.add('hidden');
+    const tbGuardar = document.getElementById('btn-guardar-articulo');
+    if (tbGuardar) {
+        tbGuardar.addEventListener('click', () => {
+            contenedorForm.classList.add('hidden');
         });
     }
-    function logout() {
-        // 1. Opcional: Limpiar datos del usuario (token, nombre, etc.)
-        // localStorage.removeItem('userToken');
-        // sessionStorage.clear();
-
-        // 2. Redirigir al login
-        window.location.href = "index.html"; // Asegúrate de que el nombre del archivo coincida
-    }
 });
+
+function logout() {
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('usuarioInfo');
+    window.location.href = "index.html";
+}

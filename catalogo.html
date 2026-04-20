@@ -16,12 +16,15 @@
 <body>
   <!-- ─── NAVBAR ─────────────────────────────────────────── -->
   <nav class="navbar">
-    <div class="logo">SIGMADE</div>
+    <div class="logo-container" style="display: flex; align-items: center; gap: 15px;">
+      <img src="LOGO-UTM.jpeg" alt="Logo" style="height: 48px; border-radius: 8px;">
+      <img src="uuutm.png" alt="UTM Logo" style="height: 48px;">
+    </div>
     <ul class="nav-menu">
       <li class="nav-item" onclick="irAInicio()">
         <i class="fa-solid fa-house" style="margin-right:5px;"></i>Inicio
       </li>
-      <li class="nav-item active">
+      <li class="nav-item" onclick="window.location.href='catalogo.html'">
         <i class="fa-solid fa-box-open" style="margin-right:5px;"></i>Catálogo
       </li>
       <li class="nav-item" onclick="window.location.href='profile.html'">
@@ -33,18 +36,16 @@
         <i data-lucide="bell" class="icon-bell"></i>
         <span class="notification-dot"></span>
       </div>
-
       <div class="user-pill">
         <div class="user-avatar">
           <i data-lucide="user" class="icon-user"></i>
         </div>
-        <span id="userName" class="user-name">Usuario</span>
-
-        <button onclick="logout()" class="logout-btn" title="Cerrar sesión">
+        <span id="userName" class="user-name" style="font-size:0.9rem;">Usuario</span>
+        <button onclick="logout()" class="logout-btn" title="Cerrar sesión"
+          style="background:transparent; border:none; color:white; cursor:pointer; padding:5px; margin-left:5px;">
           <i data-lucide="log-out" class="icon-logout"></i>
         </button>
       </div>
-
     </div>
   </nav>
 
@@ -159,21 +160,132 @@
         </div>
       </form>
     </div>
-    <!-- /formulario -->
+    <!-- /formulario registro -->
+
+    <!-- ─── FORMULARIO ACTUALIZAR MATERIAL ──────────────── -->
+    <div id="modal-editar-material" class="form-card hidden" style="margin-top: 20px; border-top: 4px solid #f39c12;">
+      <h3>
+        <i class="fa-solid fa-pen-to-square"></i>
+        Actualizar Material
+        <button onclick="cerrarModalEditar()"
+          style="float:right; background:transparent; border:none; cursor:pointer; color:#666;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </h3>
+
+      <form id="formEditarArticulo" onsubmit="return false;">
+        <input type="hidden" id="edit-id" />
+        <div class="form-grid-catalogo">
+
+          <!-- Nombre -->
+          <div class="form-field-cat">
+            <label for="edit-nombre">
+              <i class="fa-solid fa-tag"></i> Nombre del artículo
+            </label>
+            <input type="text" id="edit-nombre" name="nombre" required />
+          </div>
+
+          <!-- Disciplina -->
+          <div class="form-field-cat">
+            <label for="edit-disciplina">
+              <i class="fa-solid fa-dumbbell"></i> Disciplina
+            </label>
+            <select id="edit-disciplina" name="disciplina_id" required>
+              <!-- Cargado dinámicamente -->
+            </select>
+          </div>
+
+          <!-- Estado -->
+          <div class="form-field-cat">
+            <label for="edit-estado">
+              <i class="fa-solid fa-gauge-high"></i> Estado
+            </label>
+            <select name="estado" id="edit-estado" required>
+              <option value="Nuevo">Nuevo</option>
+              <option value="Bueno">Bueno</option>
+              <option value="Regular">Regular</option>
+              <option value="Muy-desgastado">Muy Desgastado</option>
+              <option value="Roto">Roto</option>
+            </select>
+          </div>
+
+          <!-- Tipo material -->
+          <div class="form-field-cat">
+            <label for="edit-tipo">
+              <i class="fa-solid fa-layer-group"></i> Tipo
+            </label>
+            <select name="tipoMaterial" id="edit-tipo" required>
+              <option value="Material deportivo">Material deportivo</option>
+              <option value="Cancha">Cancha</option>
+            </select>
+          </div>
+
+          <!-- Imagen -->
+          <div class="form-field-cat full-width" style="border-top: 1px solid #eee; padding-top: 15px;">
+            <label for="edit-imagen">
+              <i class="fa-solid fa-image"></i> Cambiar imagen (Opcional)
+            </label>
+            <input type="file" id="edit-imagen" name="imagen" accept="image/*" />
+          </div>
+
+          <!-- Descripción -->
+          <div class="form-field-cat full-width">
+            <label for="edit-descripcion">
+              <i class="fa-solid fa-align-left"></i> Descripción
+            </label>
+            <textarea id="edit-descripcion" name="descripcion" rows="3"></textarea>
+          </div>
+
+        </div>
+
+        <div class="form-actions-cat">
+          <button onclick="cerrarModalEditar()" type="button" class="btn-secundario">
+            Cancelar
+          </button>
+          <button onclick="actualizarArticulo()" type="submit" class="btn-exito" style="background-color: #27ae60;">
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+
 
     <!-- ─── TABLA DE MATERIALES ──────────────────────────── -->
     <div class="tabla-container">
 
       <!-- Controles: búsqueda + agregar + stats -->
-      <div class="controls-container">
-        <div class="search-input-wrapper">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Buscar material, disciplina o tipo…" id="searchMaterial">
-        </div>
+      <div class="controls-container"
+        style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 5px;">
+          <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Buscar material, disciplina o tipo…" id="searchMaterial"
+              oninput="filtrarCatalogo()">
+          </div>
 
-        <button id="btn-abrir-formulario" class="btn-principal">
-          <i class="fa-solid fa-plus"></i> Agregar Material
-        </button>
+          <select id="filtroEstadoMaterial" onchange="filtrarCatalogo()"
+            style="padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+            <option value="">Estado (Modo)</option>
+            <option value="Nuevo">Nuevo</option>
+            <option value="Bueno">Bueno</option>
+            <option value="Regular">Regular</option>
+            <option value="Muy-desgastado">Muy Desgastado</option>
+            <option value="Roto">Roto</option>
+          </select>
+
+          <select id="filtroDisponibilidad" onchange="filtrarCatalogo()"
+            style="padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+            <option value="">Disponibilidad</option>
+            <option value="Libre">Con Inventario Libre</option>
+          </select>
+
+          <button class="btn-secundario" onclick="limpiarFiltrosCatalogo()" style="padding: 8px 12px; height: auto;">
+            <i class="fa-solid fa-eraser"></i>
+          </button>
+          <button id="btn-abrir-formulario" class="btn-principal" style="margin-left: 10px;">
+            <i class="fa-solid fa-plus"></i> Agregar Material
+          </button>
+        </div>
 
         <div class="stats-cards">
           <div class="stat-card total">
@@ -183,6 +295,10 @@
           <div class="stat-card available">
             <span class="stat-label">Disponibles</span>
             <span class="stat-number" id="disponibles">–</span>
+          </div>
+          <div class="stat-card reserved">
+            <span class="stat-label">Reservados/Ocupados</span>
+            <span class="stat-number" id="ocupados">–</span>
           </div>
         </div>
       </div>
@@ -197,9 +313,9 @@
               <th><i class="fa-solid fa-hashtag"></i> Cant.</th>
               <th><i class="fa-solid fa-dumbbell"></i> Categoría</th>
               <th><i class="fa-solid fa-layer-group"></i> Tipo</th>
-              <th><i class="fa-solid fa-gauge-high"></i> Estado</th>
-              <th><i class="fa-solid fa-circle-check"></i> Disponibles</th>
               <th><i class="fa-solid fa-align-left"></i> Descripción</th>
+              <th><i class="fa-solid fa-gauge-high"></i> Estado</th>
+              <th><i class="fa-solid fa-circle-check"></i> Disponible</th>
               <th id="th-acciones"><i class="fa-solid fa-sliders"></i> Acciones</th>
             </tr>
           </thead>

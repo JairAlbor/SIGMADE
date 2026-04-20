@@ -13,34 +13,38 @@
   </head>
   <body>
     
- <nav class="navbar">
-  <div class="logo">SIGMADE</div>
-
-  <ul class="nav-menu">
-    <li class="nav-item active">Inicio</li>
-    <li class="nav-item" onclick="window.location.href='catalogo.html'">Catalogo</li>
-    <li class="nav-item" onclick="window.location.href='profile.html'">Perfil</li>
-  </ul>
-
-  <div class="top-bar-user">
-    <div class="notification-wrapper">
-      <i data-lucide="bell" class="icon-bell"></i>
-      <span class="notification-dot"></span>
+  <nav class="navbar">
+    <div class="logo-container" style="display: flex; align-items: center; gap: 15px;">
+        <img src="LOGO-UTM.jpeg" alt="Logo" style="height: 48px; border-radius: 8px;">
+        <img src="uuutm.png" alt="UTM Logo" style="height: 48px;">
     </div>
-
-<div class="user-pill">
-    <div class="user-avatar">
-        <i data-lucide="user" class="icon-user"></i>
+    <ul class="nav-menu">
+      <li class="nav-item" onclick="irAInicio()">
+        <i class="fa-solid fa-house" style="margin-right:5px;"></i>Inicio
+      </li>
+      <li class="nav-item" onclick="window.location.href='catalogo.html'">
+        <i class="fa-solid fa-box-open" style="margin-right:5px;"></i>Catálogo
+      </li>
+      <li class="nav-item" onclick="window.location.href='profile.html'">
+        <i class="fa-solid fa-user-circle" style="margin-right:5px;"></i>Perfil
+      </li>
+    </ul>
+    <div class="top-bar-user">
+      <div class="notification-wrapper">
+        <i data-lucide="bell" class="icon-bell"></i>
+        <span class="notification-dot"></span>
+      </div>
+      <div class="user-pill">
+        <div class="user-avatar">
+          <i data-lucide="user" class="icon-user"></i>
+        </div>
+        <span id="userName" class="user-name" style="font-size:0.9rem;">Usuario</span>
+        <button onclick="logout()" class="logout-btn" title="Cerrar sesión" style="background:transparent; border:none; color:white; cursor:pointer; padding:5px; margin-left:5px;">
+          <i data-lucide="log-out" class="icon-logout"></i>
+        </button>
+      </div>
     </div>
-    <span id="userName" class="user-name">Usuario</span>
-    
-    <button onclick="logout()" class="logout-btn" title="Cerrar sesión">
-        <i data-lucide="log-out" class="icon-logout"></i>
-    </button>
-</div>
-
-  </div>
-</nav>
+  </nav>
 
    <section class="form-container">
 
@@ -58,33 +62,72 @@
 
       <div class="cards-grid">
   
-  <button class="dashboard-card" onclick="alert('Abrir modal: Nuevo Préstamo')">
+  <button class="dashboard-card" onclick="openNuevoPrestamoModal()">
     <div class="card-icon">
       <i data-lucide="hand-coins" class="icon-svg"></i>
     </div>
-    <h3 class="card-title">Nuevo Préstamo</h3>
+    <h3 class="card-title">Nuevo Préstamo / Cancha</h3>
   </button>
 
-  <button class="dashboard-card" onclick="alert('Abrir modal: Reservar Cancha')">
-    <div class="card-icon">
-      <i data-lucide="layout-grid" class="icon-svg"></i>
-    </div>
-    <h3 class="card-title">Reservar Cancha</h3>
-  </button>
-
-  <button class="dashboard-card" onclick="alert('Abrir modal: Mis Eventos')">
+  <button class="dashboard-card" onclick="openMisEventosModal()">
     <div class="card-icon">
       <i data-lucide="calendar-days" class="icon-svg"></i>
     </div>
     <h3 class="card-title">Mis Eventos</h3>
   </button>
 
-  <button class="dashboard-card" onclick="alert('Abrir modal: Historial')">
+  <button class="dashboard-card" onclick="window.location.href='profile.html'">
     <div class="card-icon">
       <i data-lucide="history" class="icon-svg"></i>
     </div>
     <h3 class="card-title">Historial</h3>
   </button>
+
+</div>
+
+    <!-- Modals -->
+    <!-- Modal Nuevo Prestamo -->
+    <div id="nuevoPrestamoOverlay" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; display:none;">
+      <div class="modal-content" style="background:#fff; padding:20px; border-radius:12px; max-width:500px; width:90%; position:relative;">
+        <button onclick="closeNuevoPrestamoModal()" style="position:absolute; top:15px; right:15px; background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#6b7280;"><i data-lucide="x"></i></button>
+        <h2 style="margin-top:0;"><i data-lucide="hand-coins"></i> Solicitar Préstamo / Cancha</h2>
+        <p style="color:#666; font-size:0.9rem;">Selecciona el material o la cancha que deseas reservar. Las solicitudes deben ser aprobadas primero.</p>
+        <div style="margin-top:15px;">
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">Material / Cancha</label>
+            <select id="alumnoMaterialSelect" style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;"></select>
+        </div>
+        <div style="margin-top:15px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:bold;">Fecha de Uso</label>
+                <input type="date" id="alumnoFechaSol" style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:bold;">Fecha Límite (Entrega)</label>
+                <input type="date" id="alumnoFechaLim" style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+            </div>
+        </div>
+        <div style="margin-top:15px;">
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">Observaciones (Opcional)</label>
+            <textarea id="alumnoObs" rows="2" style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;"></textarea>
+        </div>
+        <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+            <button onclick="closeNuevoPrestamoModal()" style="padding:10px 15px; border-radius:6px; border:1px solid #ccc; background:#fff; cursor:pointer;">Cancelar</button>
+            <button onclick="solicitarPrestamoAlumno()" style="padding:10px 15px; border-radius:6px; border:none; background:var(--guinda); color:#fff; cursor:pointer;">Enviar Solicitud</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Mis Eventos -->
+    <div id="misEventosOverlay" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; display:none;">
+      <div class="modal-content" style="background:#fff; padding:20px; border-radius:12px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; position:relative;">
+        <button onclick="closeMisEventosModal()" style="position:absolute; top:15px; right:15px; background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#6b7280;"><i data-lucide="x"></i></button>
+        <h2 style="margin-top:0;"><i data-lucide="calendar-days"></i> Cartelera de Eventos</h2>
+        <div id="listaMisEventos" style="margin-top:15px;"></div>
+        <div style="margin-top:20px; text-align:right;">
+            <button onclick="closeMisEventosModal()" style="padding:10px 20px; border-radius:6px; border:none; background:var(--guinda); color:#fff; cursor:pointer;">Cerrar</button>
+        </div>
+      </div>
+    </div>
 
 </div>
 

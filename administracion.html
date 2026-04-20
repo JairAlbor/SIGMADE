@@ -1,221 +1,227 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard de Administración</title>
-    <link rel="stylesheet" href="css/nav-bar.css" />
-    <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/Admin.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="modal-js/verificarSesion.js"></script>
-  </head>
-  <body>
-    <nav class="navbar">
-      <div class="logo">SIGMADE</div>
 
-      <ul class="nav-menu">
-        <li class="nav-item active">Inicio</li>
-        <li class="nav-item" onclick="window.location.href = 'catalogo.html'">
-          Catalogo
-        </li>
-        <li class="nav-item" onclick="window.location.href = 'profile.html'">
-          Perfil
-        </li>
-      </ul>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard de Administración</title>
+  <link rel="stylesheet" href="css/nav-bar.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/Admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="modal-js/verificarSesion.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
 
-      <div class="top-bar-user">
-        <div class="notification-wrapper">
-          <i data-lucide="bell" class="icon-bell"></i>
-          <span class="notification-dot"></span>
+<body>
+  <nav class="navbar">
+    <div class="logo-container" style="display: flex; align-items: center; gap: 15px;">
+      <img src="LOGO-UTM.jpeg" alt="Logo" style="height: 48px; border-radius: 8px;">
+      <img src="uuutm.png" alt="UTM Logo" style="height: 48px;">
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item" onclick="irAInicio()">
+        <i class="fa-solid fa-house" style="margin-right:5px;"></i>Inicio
+      </li>
+      <li class="nav-item" onclick="window.location.href='catalogo.html'">
+        <i class="fa-solid fa-box-open" style="margin-right:5px;"></i>Catálogo
+      </li>
+      <li class="nav-item" onclick="window.location.href='profile.html'">
+        <i class="fa-solid fa-user-circle" style="margin-right:5px;"></i>Perfil
+      </li>
+    </ul>
+    <div class="top-bar-user">
+      <div class="notification-wrapper">
+        <i data-lucide="bell" class="icon-bell"></i>
+        <span class="notification-dot"></span>
+      </div>
+      <div class="user-pill">
+        <div class="user-avatar">
+          <i data-lucide="user" class="icon-user"></i>
+        </div>
+        <span id="userName" class="user-name" style="font-size:0.9rem;">Usuario</span>
+        <button onclick="logout()" class="logout-btn" title="Cerrar sesión"
+          style="background:transparent; border:none; color:white; cursor:pointer; padding:5px; margin-left:5px;">
+          <i data-lucide="log-out" class="icon-logout"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="form-container">
+    <header class="dashboard-header">
+      <h2 class="admin-title">Panel de Administración</h2>
+    </header>
+
+    <div class="main-grid">
+      <button class="card-featured" onclick="openPrestamos()">
+        <div class="card-header">
+          <h3>Préstamos Activos</h3>
+          <i class="fa-solid fa-book-open icon-large"></i>
         </div>
 
-<div class="user-pill">
-    <div class="user-avatar">
-        <i data-lucide="user" class="icon-user"></i>
-    </div>
-    <span id="userName" class="user-name">Usuario</span>
-    
-    <button onclick="logout()" class="logout-btn" title="Cerrar sesión">
-        <i data-lucide="log-out" class="icon-logout"></i>
-    </button>
-</div>
+        <div class="card-body">
+          <div class="big-number" id="cardPrestamosActivos"></div>
+          <p class="subtitle">Préstamos en curso</p>
 
-      </div>
-    </nav>
-
-    <main class="form-container">
-      <header class="dashboard-header">
-        <h2 class="admin-title">Panel de Administración</h2>
-      </header>
-
-      <div class="main-grid">
-        <button class="card-featured" onclick="openPrestamos()">
-          <div class="card-header">
-            <h3>Préstamos Activos</h3>
-            <i class="fa-solid fa-book-open icon-large"></i>
+          <div class="status-list">
+            <div class="status-item">Vencen hoy: <span id="cardVencenHoy"></span></div>
+            <div class="status-item">Vencidos: <span id="cardVencidos"></span></div>
           </div>
+        </div>
+        <div class="btn-guinda">
+          Abrir Gestión de Préstamos
+        </div>
+      </button>
 
-          <div class="card-body">
-            <div class="big-number" id="cardPrestamosActivos"></div>
-            <p class="subtitle">Préstamos en curso</p>
-
-            <div class="status-list">
-              <div class="status-item">Vencen hoy: <span id="cardVencenHoy"></span></div>
-              <div class="status-item">Vencidos: <span id="cardVencidos"></span></div>
-            </div>
-          </div>
-          <div class="btn-guinda">
-            Abrir Gestión de Préstamos
-          </div>
+      <div class="secondary-grid">
+        <button class="card-small" onclick="openDisciplines()">
+          <i class="fa-solid fa-dumbbell"></i>
+          <h3>Disciplinas</h3>
+          <p class="count" id="totalDisciplinas">0</p>
         </button>
 
-        <div class="secondary-grid">
-          <button class="card-small" onclick="openDisciplines()">
-            <i class="fa-solid fa-dumbbell"></i>
-            <h3>Disciplinas</h3>
-            <span class="count" id="totalDisciplinas"></span>
-          </button>
+        <button class="card-small" onclick="consultarUsuarios()">
+          <i class="fa-solid fa-users"></i>
+          <h3>Usuarios</h3>
+          <p class="count" id="totalUser">0</p>
+        </button>
 
-          <button class="card-small" onclick="consultarUsuarios()">
-            <i class="fa-solid fa-users"></i>
-            <h3>Usuarios</h3>
-            <p class="count" id="totalUser"></p>
-          </button>
+        <button class="card-small" onclick="openEvents()">
+          <i class="fa-solid fa-calendar-days"></i>
+          <h3>Eventos</h3>
+          <p class="count" id="totalEventos">0</p>
+        </button>
 
-          <button class="card-small" onclick="openEvents()">
-            <i class="fa-solid fa-calendar-days"></i>
-            <h3>Eventos</h3>
-            <p class="count">5</p>
-          </button>
-
-          <button class="card-small" onclick="openEntrenadores()">
-            <i class="fa-solid fa-user-tie"></i>
-            <h3>Entrenadores</h3>
-            <p class="count" id="totalEntrenadores"></p>
-          </button>
-        </div>
-      </div>
-    </main>
-
-    <div id="eventModalOverlay" class="modal-overlay hidden">
-      <div class="modal-content">
-        <header class="modal-header">
-          <h2>Gestión de Eventos</h2>
-          <div class="header-actions">
-            <button class="btn-guinda" onclick="toggleFormEventos()">
-              <i class="fa-solid fa-plus"></i> Registrar Evento
-            </button>
-            <button class="close-modal-btn" onclick="closeModal()">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-        </header>
-
-        <div class="modal-body">
-          <section
-            id="addEventForm"
-            class="add-form-container hidden"
-          >
-        <h3>Nuevo Evento</h3>
-                <div class="form-grid">
-                    <input type="text" placeholder="Título del evento" id="eventTitle">
-                    <input type="text" placeholder="Ubicación" id="eventLocation">
-                    <input type="date" id="eventDate">
-                    <input type="time" id="eventTime">
-                </div>
-                <textarea placeholder="Descripción del evento" rows="3" id="eventDesc"></textarea>
-                <div class="form-actions">
-                    <button class="btn-cancel" onclick="toggleForm(false)">Cancelar</button>
-                    <button class="btn-save" onclick="saveEvent()">Guardar Evento</button>
-                </div>
-        </section>
-          <div id="eventList" class="event-list-container"></div>
-        </div>
-        <footer class="modal-footer">
-          <button class="btn-secondary" onclick="closeModal()">Cerrar</button>
-        </footer>
+        <button class="card-small" onclick="openEntrenadores()">
+          <i class="fa-solid fa-user-gear"></i>
+          <h3>Entrenadores</h3>
+          <p class="count" id="totalEntrenadores">0</p>
+        </button>
       </div>
     </div>
-    
+  </main>
 
-    <!--Modal para gestion de prestamos-->
-    <div id="prestamoModalOverlay" class="modal-overlay hidden">
-      <div class="modal-content modal-content-wide">
-        <header class="modal-header">
-          <h2><i class="fa-solid fa-hand-holding-hand" style="margin-right: 8px; color: var(--guinda);"></i>Gestión de Préstamos</h2>
-          <div class="header-actions">
-            <button class="btn-guinda" onclick="toggleFormPrestamo()">
-              <i class="fa-solid fa-plus"></i> Nuevo Préstamo
-            </button>
-            <button class="close-modal-btn" onclick="closePrestamos()" title="Cerrar">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
+  <div id="eventModalOverlay" class="modal-overlay hidden">
+    <div class="modal-content">
+      <header class="modal-header" style="justify-content:space-between;">
+        <h2><i class="fa-solid fa-calendar-star" style="margin-right: 8px;"></i> Gestión de Eventos</h2>
+        <div
+          style="background: var(--guinda-light); color: var(--guinda); padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">
+          Total: <span id="eventosCounterModal">0</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn-guinda" onclick="toggleFormEventos()">
+            <i class="fa-solid fa-plus"></i> Registrar Evento
+          </button>
+          <button class="close-modal-btn" onclick="closeModal()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="modal-body">
+        <section id="addEventForm" class="add-form-container hidden">
+          <h3>Nuevo Evento</h3>
+          <div class="form-grid">
+            <input type="text" placeholder="Título del evento" id="eventTitle">
+            <input type="date" id="eventDate">
+            <input type="text" placeholder="Ubicación" id="eventLocation" style="grid-column: span 2;">
           </div>
-        </header>
+          <textarea placeholder="Descripción del evento" rows="3" id="eventDesc"></textarea>
+          <div class="form-actions">
+            <button class="btn-cancel" onclick="toggleForm(false)">Cancelar</button>
+            <button class="btn-save" onclick="saveEvent()">Guardar Evento</button>
+          </div>
+        </section>
+        <div id="eventList" class="event-list-container"></div>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal()">Cerrar</button>
+      </footer>
+    </div>
+  </div>
 
-        <div class="modal-body">
-          <!-- KPI Cards -->
-          <div class="stats-summary-grid">
-            <div class="stat-summary-card prestamo-abierto">
-              <span class="label"><i class="fa-solid fa-folder-open"></i> Abiertos</span>
-              <span class="number" id="prestamosAbiertos">8</span>
+
+  <!--Modal para gestion de prestamos-->
+  <div id="prestamoModalOverlay" class="modal-overlay hidden">
+    <div class="modal-content modal-content-wide">
+      <header class="modal-header">
+        <h2><i class="fa-solid fa-hand-holding-hand" style="margin-right: 8px; color: var(--guinda);"></i>Gestión de
+          Préstamos</h2>
+        <div class="header-actions">
+          <button class="btn-guinda" onclick="toggleFormPrestamo()">
+            <i class="fa-solid fa-plus"></i> Nuevo Préstamo
+          </button>
+          <button class="close-modal-btn" onclick="closePrestamos()" title="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="modal-body">
+        <!-- KPI Cards -->
+        <div class="stats-summary-grid">
+          <div class="stat-summary-card prestamo-abierto">
+            <span class="label"><i class="fa-solid fa-folder-open"></i> Abiertos</span>
+            <span class="number" id="prestamosAbiertos">8</span>
+          </div>
+          <div class="stat-summary-card prestamo-retraso">
+            <span class="label"><i class="fa-solid fa-clock"></i> Vencidos</span>
+            <span class="number" id="prestamosVencidos">1</span>
+          </div>
+          <div class="stat-summary-card prestamo-cerrado">
+            <span class="label"><i class="fa-solid fa-circle-check"></i> Cerrados</span>
+            <span class="number" id="prestamosCerrados">3</span>
+          </div>
+          <div class="stat-summary-card total">
+            <span class="label"><i class="fa-solid fa-list"></i> Total</span>
+            <span class="number" id="prestamosTotal">12</span>
+          </div>
+        </div>
+
+        <!-- Formulario Nuevo Préstamo (oculto por defecto) -->
+        <section id="addPrestamoForm" class="add-form-container hidden">
+          <h3><i class="fa-solid fa-file-circle-plus" style="margin-right: 6px;"></i>Registrar Nuevo Préstamo</h3>
+          <div class="form-layout-prestamo">
+            <div class="form-info-side">
+              <div class="form-field">
+                <label for="prestamoUsuario">Usuario (Alumno)</label>
+                <select id="prestamoUsuario">
+                  <option value="">Seleccionar usuario...</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="prestamoFechaSolicitud">Fecha de Solicitud (Automática)</label>
+                <input type="datetime-local" id="prestamoFechaSolicitud" readonly
+                  style="background: #f3f4f6; cursor: not-allowed;">
+              </div>
+              <div class="form-field">
+                <label for="prestamoFechaLimite">Fecha Límite de Devolución</label>
+                <input type="datetime-local" id="prestamoFechaLimite">
+              </div>
             </div>
-            <div class="stat-summary-card prestamo-retraso">
-              <span class="label"><i class="fa-solid fa-clock"></i> Vencidos</span>
-              <span class="number" id="prestamosVencidos">1</span>
-            </div>
-            <div class="stat-summary-card prestamo-cerrado">
-              <span class="label"><i class="fa-solid fa-circle-check"></i> Cerrados</span>
-              <span class="number" id="prestamosCerrados">3</span>
-            </div>
-            <div class="stat-summary-card total">
-              <span class="label"><i class="fa-solid fa-list"></i> Total</span>
-              <span class="number" id="prestamosTotal">12</span>
+
+            <div class="form-materials-side">
+              <label style="font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 8px; display: block;">
+                <i class="fa-solid fa-boxes-stacked" style="margin-right: 6px; color: var(--guinda);"></i>Selección de
+                Materiales
+              </label>
+              <div id="materialesCheckboxContainer" class="materiales-qty-container">
+                <!-- Se llena dinámicamente -->
+                <p style="color:#9ca3af; padding:12px; text-align:center;">Cargando materiales...</p>
+              </div>
             </div>
           </div>
 
-          <!-- Formulario Nuevo Préstamo (oculto por defecto) -->
-          <section id="addPrestamoForm" class="add-form-container hidden">
-            <h3><i class="fa-solid fa-file-circle-plus" style="margin-right: 6px;"></i>Registrar Nuevo Préstamo</h3>
-            <div class="form-layout-prestamo">
-              <div class="form-info-side">
-                <div class="form-field">
-                  <label for="prestamoUsuario">Usuario (Alumno)</label>
-                  <select id="prestamoUsuario">
-                    <option value="">Seleccionar usuario...</option>
-                  </select>
-                </div>
-                <div class="form-field">
-                  <label for="prestamoFechaSolicitud">Fecha de Solicitud (Automática)</label>
-                  <input type="datetime-local" id="prestamoFechaSolicitud" readonly style="background: #f3f4f6; cursor: not-allowed;">
-                </div>
-                <div class="form-field">
-                  <label for="prestamoFechaLimite">Fecha Límite de Devolución</label>
-                  <input type="datetime-local" id="prestamoFechaLimite">
-                </div>
-              </div>
-
-              <div class="form-materials-side">
-                <label style="font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 8px; display: block;">
-                  <i class="fa-solid fa-boxes-stacked" style="margin-right: 6px; color: var(--guinda);"></i>Selección de Materiales
-                </label>
-                <div id="materialesCheckboxContainer" class="materiales-qty-container">
-                  <!-- Se llena dinámicamente -->
-                  <p style="color:#9ca3af; padding:12px; text-align:center;">Cargando materiales...</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Observaciones ocupando todo el ancho -->
-            <div class="form-field full-width" style="margin-top: 1rem;">
-              <label for="prestamoObservaciones">Observaciones</label>
-              <textarea id="prestamoObservaciones" rows="2" placeholder="Notas adicionales sobre el préstamo..." style="width: 100%;"></textarea>
-            </div>
+          <!-- Observaciones ocupando todo el ancho -->
+          <div class="form-field full-width" style="margin-top: 1rem;">
+            <label for="prestamoObservaciones">Observaciones</label>
+            <textarea id="prestamoObservaciones" rows="2" placeholder="Notas adicionales sobre el préstamo..."
+              style="width: 100%;"></textarea>
+          </div>
           <!-- Alerta de conflictos de fecha -->
           <div id="conflictosAlert" class="conflictos-alert hidden">
             <div class="conflictos-header">
@@ -231,179 +237,445 @@
             </p>
           </div>
 
-            <div class="form-actions-prestamo">
-              <button class="btn-cancel" onclick="toggleFormPrestamo()">
-                <i class="fa-solid fa-xmark"></i> Cancelar
-              </button>
-              <button class="btn-save" onclick="savePrestamo()">
-                <i class="fa-solid fa-floppy-disk"></i> Guardar Préstamo
-              </button>
-            </div>
-          </section>
-
-          <!-- Barra de búsqueda -->
-          <div class="search-bar-container">
-            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
-            <input type="text" placeholder="Buscar por usuario, material o estado..." id="searchPrestamo" style="padding-left: 2.5rem;" oninput="filtrarPrestamos()">
-          </div>
-
-          <!-- Tabla CRUD de Préstamos -->
-          <div class="table-responsive">
-            <table class="custom-table" id="tablaPrestamos">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Usuario</th>
-                  <th>Material(es)</th>
-                  <th>Fecha Solicitud</th>
-                  <th>Fecha Límite</th>
-                  <th>Estado</th>
-                  <th>Entrega</th>
-                  <th>Observaciones</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tablaPrestamosBody">
-                <!-- Se llena dinámicamente desde la BD -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <footer class="modal-footer">
-          <span id="prestamoCounter" style="color: #9ca3af; font-size: 0.85rem; margin-right: auto;"></span>
-          <button class="btn-guinda" onclick="closePrestamos()">
-            <i class="fa-solid fa-xmark"></i> Cerrar
-          </button>
-        </footer>
-      </div>
-    </div>
-    <!-- Modal para gestión de disciplinas -->
-    <div id="disciplineModalOverlay" class="modal-overlay hidden">
-      <div class="modal-content">
-        <header class="modal-header">
-          <h2>Gestión de Disciplinas</h2>
-          <div class="header-actions">
-            <button class="btn-guinda" onclick="toggleDisciplineForm()">
-              <i class="fa-solid fa-plus"></i> Agregar
+          <div class="form-actions-prestamo">
+            <button class="btn-cancel" onclick="toggleFormPrestamo()">
+              <i class="fa-solid fa-xmark"></i> Cancelar
+            </button>
+            <button class="btn-save" onclick="savePrestamo()">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar Préstamo
             </button>
           </div>
-        </header>
-        <div class="modal-body">
-          <div id="disciplineForm" class="add-form-container hidden">
-            <h3>Nueva Disciplina</h3>
-            <div class="form-row">
-              <input type="text" placeholder="Nombre de la disciplina" id="disciplinaNombre" />
-              <select id="disciplinaEntrenador">
-                <option value="">Sin entrenador</option>
-              </select>
-              <button class="btn-save" onclick="saveDisciplina()">
-                Guardar
-              </button>
-            </div>
-          </div>
-          <div id="disciplineGrid" class="disciplines-grid"></div>
+        </section>
+
+        <!-- Pestañas y Filtros -->
+        <div class="tabs-container"
+          style="display: flex; gap: 10px; border-bottom: 2px solid #e5e7eb; margin-bottom: 15px;">
+          <button class="tab-button"
+            style="padding: 10px 15px; background: none; border: none; cursor: pointer; border-bottom: 2px solid var(--guinda); font-weight: bold; color: var(--guinda);"
+            onclick="switchPrestamosTab('encurso', this)" id="tabEnCurso">En Curso / Pendientes</button>
+          <button class="tab-button"
+            style="padding: 10px 15px; background: none; border: none; cursor: pointer; color: #6b7280; border-bottom: 2px solid transparent;"
+            onclick="switchPrestamosTab('completados', this)" id="tabCompletados">Terminados / Devueltos</button>
         </div>
-        <footer class="modal-footer">
-          <button class="btn-secondary" onclick="closeDisciplines()">
-            Cerrar
-          </button>
-        </footer>
-      </div>
-    </div>
-    
-    <!-- Modal para gestión de entrenadores -->
-    <div id="trainerModalOverlay" class="modal-overlay hidden">
-      <div class="modal-content">
-        <header class="modal-header">
-          <h2>Lista de Entrenadores (Docentes)</h2>
-          <div class="header-actions">
-            <button class="close-modal-btn" onclick="closeEntrenadores()" title="Cerrar">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
+
+        <div class="filters-grid"
+          style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; background: #f9fafb; padding: 10px; border-radius: 8px; align-items: center;">
+          <div class="search-bar-container" style="flex: 1; margin: 0; min-width: 200px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass"
+              style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+            <input type="text" placeholder="Buscar..." id="searchPrestamo"
+              style="padding-left: 2.5rem; width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding-top: 8px; padding-bottom: 8px;"
+              oninput="aplicarFiltrosPrestamos()">
           </div>
-        </header>
-        <div class="modal-body">
-          <div id="trainerGrid" class="disciplines-grid">
-            <!-- Se llena dinámicamente -->
-          </div>
+          <input type="date" id="filterDateStart" onchange="aplicarFiltrosPrestamos()"
+            style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px;" title="Fecha Desde">
+          <input type="date" id="filterDateEnd" onchange="aplicarFiltrosPrestamos()"
+            style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px;" title="Fecha Hasta">
+          <select id="filterStatus" onchange="aplicarFiltrosPrestamos()"
+            style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px;">
+            <option value="">Estados (Todos)</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Cancelado">Rechazado/Cancelado</option>
+          </select>
+          <button class="btn-cancel" onclick="limpiarFiltrosPrestamos()"><i class="fa-solid fa-eraser"></i></button>
+          <button class="btn-guinda" onclick="descargarPDFPrestamos()"><i class="fa-solid fa-file-pdf"></i> PDF</button>
         </div>
-        <footer class="modal-footer">
-          <button class="btn-secondary" onclick="closeEntrenadores()">
-            Cerrar
-          </button>
-        </footer>
+
+        <!-- Tabla CRUD de Préstamos -->
+        <div class="table-responsive">
+          <table class="custom-table" id="tablaPrestamos">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Material(es)</th>
+                <th>Fecha Solicitud</th>
+                <th>Fecha Límite</th>
+                <th>Estado</th>
+                <th>Entrega</th>
+                <th>Observaciones</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaPrestamosBody">
+              <!-- Se llena dinámicamente desde la BD -->
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      <footer class="modal-footer">
+        <span id="prestamoCounter" style="color: #9ca3af; font-size: 0.85rem; margin-right: auto;"></span>
+        <button class="btn-guinda" onclick="closePrestamos()">
+          <i class="fa-solid fa-xmark"></i> Cerrar
+        </button>
+      </footer>
     </div>
+  </div>
 
-
-<!-- Modal para gestión de usuarios -->
-
-<div id="modalUsuarios" class="modal-overlay hidden">
+  <!-- Modal para Finalizar Préstamo (Observaciones) -->
+  <div id="finalizarPrestamoModalOverlay" class="modal-overlay hidden" style="z-index: 1000;">
+    <div class="modal-content" style="max-width: 400px;">
+      <header class="modal-header">
+        <h2><i class="fa-solid fa-clipboard-check" style="margin-right: 8px; color: var(--guinda);"></i>Finalizar
+          Préstamo</h2>
+      </header>
+      <div class="modal-body">
+        <input type="hidden" id="finPrestamoId">
+        <p style="font-size: 0.9rem; color: #4b5563; margin-bottom: 12px;">Por favor confirma la entrega del material.
+          ¿Hay alguna observación sobre el estado del material devuelto (daños, faltantes, retrasos)?</p>
+        <textarea id="finPrestamoObs" rows="4"
+          style="width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px;"
+          placeholder="Ej: Entregado en buenas condiciones..."></textarea>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn-secondary"
+          onclick="document.getElementById('finalizarPrestamoModalOverlay').classList.add('hidden')">Cancelar</button>
+        <button class="btn-guinda" onclick="confirmarFinalizarPrestamo()"><i class="fa-solid fa-check"></i> Confirmar y
+          Finalizar</button>
+      </footer>
+    </div>
+  </div>
+  <!-- Modal para gestión de disciplinas -->
+  <div id="disciplineModalOverlay" class="modal-overlay hidden">
     <div class="modal-content">
-        <div class="modal-header">
-            <h2>Usuarios Registrados</h2>
+      <header class="modal-header" style="justify-content:space-between;">
+        <h2><i class="fa-solid fa-medal" style="margin-right: 8px;"></i> Gestión de Disciplinas</h2>
+        <div
+          style="background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">
+          Total: <span id="disciplinasCounterModal">0</span>
         </div>
-        
-        <div class="modal-body">
-            <div class="search-bar-container">
-                <input type="text" placeholder="Buscar por nombre o email...">
+        <button class="close-modal-btn" onclick="closeDisciplines()" title="Cerrar"><i
+            class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="modal-body">
+        <!-- Formulario Nueva Disciplina (Vista fija según mockup) -->
+        <div id="disciplineFormArea"
+          style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:25px;">
+          <h3 style="margin-top:0; color:#1e293b; font-size:1.1rem; margin-bottom:15px;">Nueva Disciplina</h3>
+          <div style="display:flex; gap:15px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="flex:1; min-width:200px;">
+              <input type="text" placeholder="Nombre de la disciplina" id="disciplinaNombre"
+                style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1;" />
             </div>
-
-            <div class="stats-summary-grid">
-                <div class="stat-summary-card active">
-                    <span class="label">Activos</span>
-                    <span class="number" id="activeUsersModal">0</span>
-                </div>
-                <div class="stat-summary-card inactive">
-                    <span class="label">Sancionados</span>
-                    <span class="number" id="inactiveUsersModal">0</span>
-                </div>
-                <div class="stat-summary-card total">
-                    <span class="label">Total</span>
-                    <span class="number" id="totalUsersModal">0</span>
-                </div>
+            <div style="flex:1; min-width:200px;">
+              <select id="disciplinaEntrenador"
+                style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1;">
+                <option value="">Seleccione Entrenador...</option>
+              </select>
             </div>
-
-            <div class="table-responsive">
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre Completo</th>
-                            <th>Email</th>
-                            <th>Rol</th>
-                            <th>Número de Teléfono</th>
-                            <th>Fecha de Registro</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaUsuariosBody">
-                    </tbody>
-                </table>
-            </div>
+            <button class="btn-guinda" onclick="saveDisciplina()"
+              style="height:42px; padding:0 20px; border-radius:6px; white-space:nowrap;">
+              <i class="fa-solid fa-plus"></i> Agregar Disciplina
+            </button>
+          </div>
         </div>
 
-        <div class="modal-footer">
-            <button class="btn-guinda" onclick="toggleModal('modalUsuarios')">Cerrar</button>
+        <!-- Tabla de Disciplinas -->
+        <div class="table-responsive">
+          <table class="material-table">
+            <thead>
+              <tr>
+                <th>Disciplina</th>
+                <th>Entrenador / Instructor</th>
+                <th style="text-align:center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="disciplineTableBody">
+              <!-- Se carga dinámicamente -->
+            </tbody>
+          </table>
         </div>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn-secondary" onclick="closeDisciplines()">
+          Cerrar
+        </button>
+      </footer>
     </div>
-</div>
+  </div>
 
-    <script>
-      lucide.createIcons();
-    </script>
-    
-    <!-- nav-utils.js: Controla la sesión (redirección al login), el cierre de sesión, navegación basada en el rol y el nombre de usuario en la barra. -->
-    <script src="nav-utils.js"></script>
-    
-    <!-- app3.js: Gestiona el CRUD completo y visualización del listado de usuarios (consultar, modificar estados, eliminar y estadística total). -->
-    <script src="app3.js"></script>
-    
-    <!-- modal-admi.js: Extrae información del localStorage de forma complementaria para modales y renderizar la bienvenida principal. -->
-    <script src="modal-js/modal-admi.js"></script>
-    
-    <!-- modal-eventos.js: Contiene toda la lógica (peticiones API, renderizado y modales) para gestionar Préstamos, Disciplinas y Eventos. -->
-    <script src="modal-js/modal-eventos.js"></script>
-  </body>
+  <!-- Modal para gestión de entrenadores -->
+  <div id="trainerModalOverlay" class="modal-overlay hidden">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>Lista de Entrenadores (Docentes)</h2>
+        <div class="header-actions">
+          <button class="close-modal-btn" onclick="closeEntrenadores()" title="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div id="trainerGrid" class="disciplines-grid">
+          <!-- Se llena dinámicamente -->
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn-secondary" onclick="closeEntrenadores()">
+          Cerrar
+        </button>
+      </footer>
+    </div>
+  </div>
+
+
+  <!-- Modal para gestión de usuarios -->
+
+  <div id="modalUsuarios" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Usuarios Registrados</h2>
+      </div>
+
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; gap:10px;">
+          <div class="search-bar-container" style="flex:1; margin:0; position:relative;">
+            <i class="fa-solid fa-magnifying-glass"
+              style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+            <input type="text" placeholder="Buscar por nombre o email..."
+              style="padding-left: 2.5rem; width:100%; border:1px solid #d1d5db; border-radius:6px; padding-top:8px; padding-bottom:8px;">
+          </div>
+          <button class="btn-guinda"
+            onclick="document.getElementById('registrarUsuarioBox').classList.toggle('hidden');"
+            style="padding:10px 15px; border-radius:6px; background:#793342; color:#fff; border:none; cursor:pointer;">
+            <i class="fa-solid fa-user-plus"></i> Nuevo Registro
+          </button>
+        </div>
+
+        <div id="registrarUsuarioBox" class="hidden"
+          style="background:#f9fafb; border:1px solid #d1d5db; border-radius:8px; padding:20px; margin-bottom:20px;">
+          <h3 style="margin:0 0 15px; color:#1f2937;"><i class="fa-solid fa-user-plus"></i> Registrar Nuevo Usuario</h3>
+          <form id="formNuevoUsuario" onsubmit="registrarNuevoUsuario(event)">
+            <div class="form-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+              <div style="grid-column: span 2;">
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Tipo de
+                  usuario:</label>
+                <select id="nu_rol" required
+                  style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+                  <option value="">Selecciona una opción</option>
+                  <option value="Alumno">Alumno</option>
+                  <option value="Entrenador">Entrenador</option>
+                  <option value="Admin">Administrador</option>
+                  <option value="Operador">Operador</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Nombre(s)</label>
+                <input type="text" id="nu_nombre" required placeholder="Ej. Juan Carlos"
+                  style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Apellidos</label>
+                <input type="text" id="nu_apellidos" required placeholder="Ej. Pérez García"
+                  style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">ID
+                  Institucional</label>
+                <input type="text" id="nu_id" placeholder="Matrícula o número de trabajador"
+                  style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+              </div>
+              <div>
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Número
+                  telefónico</label>
+                <input type="text" id="nu_tel" placeholder="10 dígitos (ej. 9511234567)"
+                  style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+              </div>
+              <div style="grid-column: span 2;">
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Correo
+                  electrónico</label>
+                <input type="email" id="nu_email" required placeholder="usuario@utm.mx"
+                  style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+              </div>
+              <div style="grid-column: span 2;">
+                <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:5px;">Contraseña</label>
+                <input type="password" id="nu_pass" required placeholder="Mínimo 8 caracteres"
+                  style="width:100%; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+              </div>
+            </div>
+            <div style="margin-top:20px; display:flex; gap:10px;">
+              <button type="submit"
+                style="padding:10px 20px; border-radius:6px; background:#793342; color:#fff; border:none; font-weight:bold; cursor:pointer;">
+                <i class="fa-solid fa-check"></i> Realizar registro
+              </button>
+              <button type="button" onclick="document.getElementById('registrarUsuarioBox').classList.add('hidden')"
+                style="padding:10px 20px; border-radius:6px; background:#e5e7eb; color:#374151; border:none; cursor:pointer;">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+
+
+        <div class="stats-summary-grid">
+          <div class="stat-summary-card active">
+            <span class="label">Activos</span>
+            <span class="number" id="activeUsersModal">0</span>
+          </div>
+          <div class="stat-summary-card inactive">
+            <span class="label">Sancionados</span>
+            <span class="number" id="inactiveUsersModal">0</span>
+          </div>
+          <div class="stat-summary-card total">
+            <span class="label">Total</span>
+            <span class="number" id="totalUsersModal">0</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Nombre Completo</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Número de Teléfono</th>
+                <th>Fecha de Registro</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaUsuariosBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-guinda" onclick="toggleModal('modalUsuarios')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Entrenadores -->
+  <div id="entrenadoresModalOverlay" class="modal-overlay hidden" style="z-index: 1000;">
+    <div class="modal-content modal-content-wide">
+      <header class="modal-header" style="justify-content:space-between;">
+        <h2><i class="fa-solid fa-user-group" style="margin-right: 8px;"></i> Gestión de Entrenadores</h2>
+        <div
+          style="background: #f0fdf4; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">
+          Total: <span id="entrenadoresCounterModal">0</span>
+        </div>
+        <button class="close-modal-btn" onclick="closeEntrenadores()" title="Cerrar"><i
+            class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; gap:10px;">
+          <div class="search-bar-container" style="flex:1; margin:0; position:relative;">
+            <i class="fa-solid fa-magnifying-glass"
+              style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+            <input type="text" id="searchEntrenador"
+              style="padding-left: 2.5rem; width:100%; border:1px solid #d1d5db; border-radius:6px; padding-top:8px; padding-bottom:8px;"
+              placeholder="Buscar entrenador..." oninput="filtrarEntrenadores()">
+          </div>
+          <button class="btn-guinda"
+            onclick="document.getElementById('asignarEntrenadorBox').classList.toggle('hidden'); cargarUsuariosParaAsignar();"
+            style="padding:10px 15px; border-radius:6px; background:#793342; color:#fff; border:none; cursor:pointer;">
+            <i class="fa-solid fa-plus"></i> Agregar Entrenador
+          </button>
+        </div>
+
+        <div id="asignarEntrenadorBox" class="hidden"
+          style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:15px; margin-bottom:20px;">
+          <h4 style="margin:0 0 10px; color:#1e3a8a;">Asignar Entrenador</h4>
+          <select id="selectNuevoEntrenador"
+            style="width:100%; padding:10px; border-radius:6px; border:1px solid #93c5fd; margin-bottom:15px;"></select>
+          <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button onclick="document.getElementById('asignarEntrenadorBox').classList.add('hidden')"
+              style="padding:8px 15px; border-radius:6px; border:none; background:#6b7280; color:white; cursor:pointer;">Cancelar</button>
+            <button onclick="asignarRolEntrenador()"
+              style="padding:8px 15px; border-radius:6px; border:none; background:#10b981; color:white; cursor:pointer;">Asignar
+              Rol</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="custom-table" id="tablaEntrenadores">
+            <thead>
+              <tr>
+                <th>Nombre Completo</th>
+                <th>Especialidad / Rol</th>
+                <th>Contacto</th>
+                <th>Estatus</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaEntrenadoresBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <span id="entrenadoresCounter" style="color: #9ca3af; font-size: 0.85rem; margin-right: auto;"></span>
+        <button class="btn-guinda" onclick="closeEntrenadores()"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal Editar Usuario -->
+  <div id="editarUsuarioModalOverlay" class="modal-overlay hidden" style="z-index: 1000;">
+    <div class="modal-content" style="max-width: 500px;">
+      <header class="modal-header">
+        <h2><i class="fa-solid fa-user-pen" style="margin-right: 8px;"></i> Editar Usuario</h2>
+      </header>
+      <div class="modal-body">
+        <input type="hidden" id="editUserId">
+        <div class="form-grid-prestamo">
+          <div class="form-field">
+            <label>Nombres</label>
+            <input type="text" id="editUserNombre">
+          </div>
+          <div class="form-field">
+            <label>Apellidos</label>
+            <input type="text" id="editUserApellidos">
+          </div>
+          <div class="form-field" style="grid-column: span 2;">
+            <label>Email</label>
+            <input type="email" id="editUserEmail">
+          </div>
+          <div class="form-field">
+            <label>Rol</label>
+            <select id="editUserRol">
+              <option value="Alumno">Alumno</option>
+              <option value="Docente">Docente/Entrenador</option>
+              <option value="Admin">Admin</option>
+              <option value="Operador">Operador</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Estatus</label>
+            <select id="editUserEstatus">
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+              <option value="Sancionado">Sancionado</option>
+              <option value="Graduado">Graduado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn-secondary" onclick="closeEditarUsuario()">Cancelar</button>
+        <button class="btn-guinda" onclick="guardarEdicionUsuario()"><i class="fa-solid fa-floppy-disk"></i> Guardar
+          Cambios</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+
+  <!-- nav-utils.js: Controla la sesión (redirección al login), el cierre de sesión, navegación basada en el rol y el nombre de usuario en la barra. -->
+  <script src="nav-utils.js"></script>
+
+  <!-- app3.js: Gestiona el CRUD completo y visualización del listado de usuarios (consultar, modificar estados, eliminar y estadística total). -->
+  <script src="app3.js"></script>
+
+  <!-- modal-admi.js: Extrae información del localStorage de forma complementaria para modales y renderizar la bienvenida principal. -->
+  <script src="modal-js/modal-admi.js"></script>
+
+  <!-- modal-eventos.js: Contiene toda la lógica (peticiones API, renderizado y modales) para gestionar Préstamos, Disciplinas y Eventos. -->
+  <script src="modal-js/modal-eventos.js"></script>
+</body>
+
 </html>

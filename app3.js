@@ -1,5 +1,8 @@
 // La inicialización se hace abajo con window.onload
 
+// API URL Detección dinámica
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3001' : '';
+
 //funcion para consultar el total de usuarios registrados
 function contarTotalUsuarios() {
   const elTotal = document.getElementById("totalUser");
@@ -12,7 +15,7 @@ function contarTotalUsuarios() {
     return;
   }
 
-  fetch("http://localhost:3001/api/usuario/num", {
+  fetch(`${API_BASE}/api/usuario/num`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -60,7 +63,7 @@ window.onclick = function (event) {
 // Función para consultar y mostrar los usuarios registrados
 
 function consultarUsuarios() {
-  fetch("http://localhost:3001/api/usuario", {
+  fetch(`${API_BASE}/api/usuario`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -79,6 +82,8 @@ function consultarUsuarios() {
         }
 
         tablaImprimir.innerHTML = ""; // Limpiar contenido previo
+
+        currentUsersList = data.usuarios;
 
         // Opcional: Actualizar los números de las tarjetas KPI dinámicamente
         // document.querySelector('.stat-summary-card.total .number').innerText = data.usuarios.length;
@@ -101,7 +106,7 @@ function consultarUsuarios() {
                 </span>
             </td>
             <td class="actions">
-                <button class="btn-icon edit" title="Editar Estado" onclick="editarUsuario(${usuario.id}, '${usuario.estatus}')">
+                <button class="btn-icon edit" title="Editar" onclick="openEditarUsuario(${usuario.id})">
                     <i class="fa-regular fa-pen-to-square"></i>
                 </button>
                 <button class="btn-icon delete" title="Eliminar" onclick="eliminarUsuario(${usuario.id})">
@@ -128,7 +133,7 @@ function consultarUsuarios() {
 
 //funcion para consultar la informacion de un usuario específico por su ID
 function consultarUsuarioPorID(id) {
-  fetch(`http://localhost:3001/api/usuario/${id}`, {
+  fetch(`${API_BASE}/api/usuario/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -151,47 +156,65 @@ function consultarUsuarioPorID(id) {
     });
 }
 
-function editarUsuario(id, estatusActual) {
-  const nuevoEstatus = estatusActual === 'Activo' ? 'Sancionado' : 'Activo';
-  let motivo = "";
+// ========== EDITAR USUARIO COMPLETO ==========
+let currentUsersList = [];
 
-  if (nuevoEstatus === 'Sancionado') {
-    motivo = prompt("El usuario cambiará a Sancionado. Ingrese el motivo de la sanción:");
-    if (motivo === null) return; // Se canceló la acción
-    if (motivo.trim() === '') motivo = 'Sancionado por administrador';
-  } else {
-    if (!confirm("¿Está seguro que desea cambiar el estado del usuario a Activo?")) {
-      return;
-    }
+function openEditarUsuario(id) {
+  const usuario = currentUsersList.find(u => u.id === id);
+  if (!usuario) return;
+  document.getElementById('editUserId').value = usuario.id;
+  document.getElementById('editUserNombre').value = usuario.nombre;
+  document.getElementById('editUserApellidos').value = usuario.apellidos || '';
+  document.getElementById('editUserEmail').value = usuario.email;
+  document.getElementById('editUserRol').value = usuario.rol;
+  document.getElementById('editUserEstatus').value = usuario.estatus;
+  document.getElementById('editarUsuarioModalOverlay').classList.remove('hidden');
+}
+
+function closeEditarUsuario() {
+  document.getElementById('editarUsuarioModalOverlay').classList.add('hidden');
+}
+
+function guardarEdicionUsuario() {
+  const id = document.getElementById('editUserId').value;
+  const nombre = document.getElementById('editUserNombre').value;
+  const apellidos = document.getElementById('editUserApellidos').value;
+  const email = document.getElementById('editUserEmail').value;
+  const rol = document.getElementById('editUserRol').value;
+  const estatus = document.getElementById('editUserEstatus').value;
+
+  if (!nombre || !email || !rol) {
+    alert("Nombre, Email y Rol son obligatorios"); return;
   }
 
-  fetch(`http://localhost:3001/api/usuario/${id}/estatus`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ estatus: nuevoEstatus, motivo_sancion: motivo })
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        alert('✅ ' + data.mensaje);
-        consultarUsuarios(); // Refrescar la tabla
-        contarTotalUsuarios(); // Refrescar los totales
-      } else {
-        alert('❌ ' + (data.error || 'Error al cambiar estatus'));
-      }
-    })
-    .catch((error) => {
-      console.error("Error de conexión:", error);
-      alert("Error al conectar con el servidor");
-    });
+  // Promise All to update both Data and Estatus
+  Promise.all([
+    fetch(`${API_BASE}/api/usuario/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem('userToken')}` },
+      body: JSON.stringify({ nombre, apellidos, email, rol })
+    }).then(r => r.json()),
+    fetch(`${API_BASE}/api/usuario/${id}/estatus`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem('userToken')}` },
+      body: JSON.stringify({ estatus, motivo_sancion: "Editado por Admin" })
+    }).then(r => r.json())
+  ]).then(responses => {
+    alert("✅ Usuario actualizado correctamente.");
+    closeEditarUsuario();
+    consultarUsuarios();
+    contarTotalUsuarios();
+  }).catch(err => {
+    console.error(err);
+    alert("Error al editar usuario.");
+  });
 }
 
 function eliminarUsuario(id) {
   if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
-    fetch(`/api/usuario/${id}`, {
+    fetch(`${API_BASE}/api/usuario/${id}`, {
       method: "DELETE",
       headers: {
-        "Content-Type": "application/json",
         "Authorization": `Bearer ${localStorage.getItem('userToken')}`
       },
     })
@@ -199,13 +222,12 @@ function eliminarUsuario(id) {
       .then((data) => {
         if (data.success) {
           alert('✅ ' + data.mensaje);
-          toggleModal('modalUsuarios');
+          // close modal maybe? the user is not opening a modal for deleting
 
-
-          // Actualizar la lista de usuarios después de eliminar
-          consultarUsuarios();
+          // Actualizar tabla entrenadores
+          consultarEntrenadores();
+          contarTotalEntrenadores();
           contarTotalUsuarios(); // Actualizar el total de usuarios después de eliminar
-
         } else {
           alert('❌ ' + (data.error || 'Error al eliminar usuario'));
         }
@@ -221,10 +243,126 @@ function eliminarUsuario(id) {
 // Llamamos a las funciones para cargar datos al cargar la página
 window.onload = () => {
   contarTotalUsuarios();
-  // El Dashboard de préstamos ahora se auto-inicializa en modal-eventos.js
-  if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
-  if (typeof contarTotalEntrenadores === 'function') contarTotalEntrenadores();
+  cargarStatsCard();
+  contarTotalDisciplinas();
+  contarTotalEntrenadores();
+  contarTotalEventos();
 };
+
+function contarTotalEventos() {
+  const el = document.getElementById('totalEventos');
+  if (!el) return;
+
+  fetch(`${API_BASE}/api/evento`, {
+    headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        el.textContent = data.eventos.length;
+        if (document.getElementById('eventosCounterModal')) document.getElementById('eventosCounterModal').textContent = data.eventos.length;
+      }
+    }).catch(err => console.error('Error contando eventos:', err));
+}
+
+// ==== REGISTRO NUEVO USUARIO ====
+async function registrarNuevoUsuario(e) {
+  e.preventDefault();
+  const rol = document.getElementById('nu_rol').value;
+  const nombres = document.getElementById('nu_nombre').value;
+  const apellidos = document.getElementById('nu_apellidos').value;
+  const identificador = document.getElementById('nu_id').value;
+  const numero = document.getElementById('nu_tel').value;
+  const email = document.getElementById('nu_email').value;
+  const password = document.getElementById('nu_pass').value;
+
+  try {
+    const response = await fetch(`${API_BASE}/api/usuario`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+      },
+      body: JSON.stringify({ rol, nombres, apellidos, identificador, numero, email, password })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert("✅ Usuario registrado exitosamente");
+      document.getElementById('formNuevoUsuario').reset();
+      document.getElementById('registrarUsuarioBox').classList.add('hidden');
+      consultarUsuarios(); // refrescar
+      contarTotalUsuarios(); // refrescar
+      contarTotalEntrenadores(); // en caso de ser entrenador
+    } else {
+      alert("❌ " + (data.message || data.error));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error de conexión al registrar usuario");
+  }
+}
+
+
+async function contarTotalDisciplinas() {
+  const el = document.getElementById("totalDisciplinas");
+  if (!el) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/disciplina`, {
+      headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      el.textContent = data.disciplinas.length;
+      const elModal = document.getElementById("disciplinasCounterModal");
+      if (elModal) elModal.textContent = data.disciplinas.length;
+    }
+  } catch (err) { console.error('Error contando disciplinas:', err); }
+}
+
+async function cargarUsuariosParaAsignar() {
+  try {
+    const res = await fetch(`${API_BASE}/api/usuario`, {
+      headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      const select = document.getElementById("selectNuevoEntrenador");
+      if (select) {
+        select.innerHTML = '<option value="">Seleccione usuario...</option>';
+        data.usuarios.forEach(user => {
+          select.innerHTML += `<option value="${user.id}">${user.nombre} ${user.apellidos || ''} (${user.rol})</option>`;
+        });
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function asignarRolEntrenador() {
+  const id = document.getElementById("selectNuevoEntrenador").value;
+  if (!id) return alert("Seleccione un usuario");
+
+  try {
+    const res = await fetch(`${API_BASE}/api/usuario/${id}/rol`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem('userToken')}` },
+      body: JSON.stringify({ rol: "Docente" }) // A "Docente" es entrenador en nuestra app
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      alert('✅ Usuario asignado como Entrenador / Docente');
+      document.getElementById('asignarEntrenadorBox').classList.add('hidden');
+      consultarEntrenadores();
+      contarTotalEntrenadores();
+    } else {
+      alert('❌ Error: ' + data.error);
+    }
+  } catch (err) { console.error(err); }
+}
 
 // ============== FUNCIÓN PARA PROBAR EL TOKEN (JWT) ==============
 async function probarRutaProtegida() {
@@ -235,7 +373,7 @@ async function probarRutaProtegida() {
   }
 
   try {
-    const response = await fetch("http://localhost:3001/api/test", {
+    const response = await fetch(`${API_BASE}/api/test`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -254,4 +392,214 @@ async function probarRutaProtegida() {
     console.error("Error al probar token:", error);
     alert("Error de red intentando probar el token.");
   }
+}
+
+// ========================================================
+// ============ MODAL ENTRENADORES ========================
+// ========================================================
+let entrenadoresList = [];
+
+function openEntrenadores() {
+  document.getElementById('entrenadoresModalOverlay').classList.remove('hidden');
+  cargarEntrenadoresModal();
+}
+
+function closeEntrenadores() {
+  document.getElementById('entrenadoresModalOverlay').classList.add('hidden');
+}
+
+function contarTotalEntrenadores() {
+  const el = document.getElementById('totalEntrenadores');
+  if (!el) return;
+
+  fetch(`${API_BASE}/api/entrenador`, {
+    headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        el.textContent = data.entrenadores.length;
+        if (document.getElementById('entrenadoresCounterModal')) document.getElementById('entrenadoresCounterModal').textContent = data.entrenadores.length;
+      }
+    }).catch(err => console.error('Error contando entrenadores:', err));
+}
+
+function cargarEntrenadoresModal() {
+  fetch(`${API_BASE}/api/entrenador`, {
+    headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        entrenadoresList = data.entrenadores;
+        renderEntrenadores(entrenadoresList);
+      }
+    }).catch(err => console.error(err));
+}
+
+function renderEntrenadores(lista) {
+  const tbody = document.getElementById('tablaEntrenadoresBody');
+  const counter = document.getElementById('entrenadoresCounter');
+  const thead = document.querySelector('#entrenadoresModalOverlay thead tr');
+
+  if (thead && thead.cells.length < 5) {
+    const th = document.createElement('th');
+    th.textContent = 'Acciones';
+    thead.appendChild(th);
+  }
+
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px; color:#666;">No hay entrenadores</td></tr>';
+    if (counter) counter.textContent = '0 entrenadores';
+    return;
+  }
+
+  lista.forEach(e => {
+    const statusClass = e.estatus === 'Activo' ? 'active' : 'inactive';
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${e.nombre} ${e.apellidos || ''}</strong></td>
+        <td><i class="fa-solid fa-chalkboard-user"></i> Entrenador / Docente</td>
+        <td>
+          <i class="fa-solid fa-envelope" style="color:#9ca3af;"></i> ${e.email}<br>
+          <i class="fa-solid fa-phone" style="color:#9ca3af;"></i> ${e.telefono || 'N/A'}
+        </td>
+        <td><span class="status-pill ${statusClass}">${e.estatus}</span></td>
+        <td class="actions">
+            <button class="btn-icon delete" title="Quitar Rol Entrenador" onclick="quitarRolEntrenador(${e.id})">
+                <i class="fa-solid fa-user-minus"></i>
+            </button>
+        </td>
+      </tr>
+    `;
+  });
+  if (counter) counter.textContent = `Mostrando ${lista.length} entrenador(es)`;
+  if (document.getElementById('entrenadoresCounterModal')) document.getElementById('entrenadoresCounterModal').textContent = lista.length;
+}
+
+// ========================================================
+// ============ MODAL DISCIPLINAS =========================
+// ========================================================
+
+function openDisciplines() {
+  document.getElementById('disciplineModalOverlay').classList.remove('hidden');
+  cargarEntrenadoresParaDisciplina();
+  consultarDisciplinas();
+}
+
+function closeDisciplines() {
+  document.getElementById('disciplineModalOverlay').classList.add('hidden');
+}
+
+async function cargarEntrenadoresParaDisciplina() {
+  try {
+    const res = await fetch(`${API_BASE}/api/entrenador/activos`, {
+      headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      const select = document.getElementById("disciplinaEntrenador");
+      if (select) {
+        select.innerHTML = '<option value="">Seleccione Entrenador...</option>';
+        data.entrenadores.forEach(e => {
+          select.innerHTML += `<option value="${e.id}">${e.nombre} ${e.apellidos || ''}</option>`;
+        });
+      }
+    }
+  } catch (err) { console.error(err); }
+}
+
+async function consultarDisciplinas() {
+  try {
+    const res = await fetch(`${API_BASE}/api/disciplina`, {
+      headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      renderDisciplinas(data.disciplinas);
+    }
+  } catch (err) { console.error(err); }
+}
+
+function renderDisciplinas(lista) {
+  const tbody = document.getElementById('disciplineTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  lista.forEach(d => {
+    const entrenador = d.entrenador_nombre ? `${d.entrenador_nombre} ${d.entrenador_apellidos || ''}` : '<span style="color:#94a3b8;">Por Asignar</span>';
+    tbody.innerHTML += `
+            <tr>
+                <td><strong>${d.nombre}</strong></td>
+                <td>${entrenador}</td>
+                <td style="text-align:center;">
+                    <button class="btn-icon delete" onclick="eliminarDisciplina(${d.id})" style="color:#ef4444;">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+  });
+}
+
+async function saveDisciplina() {
+  const nombre = document.getElementById('disciplinaNombre').value;
+  const entrenador_id = document.getElementById('disciplinaEntrenador').value;
+
+  if (!nombre) return alert("Ingrese el nombre de la disciplina");
+
+  try {
+    const res = await fetch(`${API_BASE}/api/disciplina`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem('userToken')}` },
+      body: JSON.stringify({ nombre, entrenador_id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Disciplina agregada");
+      document.getElementById('disciplinaNombre').value = '';
+      consultarDisciplinas();
+      contarTotalDisciplinas();
+    }
+  } catch (err) { console.error(err); }
+}
+
+async function eliminarDisciplina(id) {
+  if (!confirm("¿Eliminar esta disciplina?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/disciplina/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${localStorage.getItem('userToken')}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      consultarDisciplinas();
+      contarTotalDisciplinas();
+    } else {
+      alert("❌ Error: " + data.error);
+    }
+  } catch (err) { console.error(err); }
+}
+
+async function quitarRolEntrenador(id) {
+  if (!confirm("¿Deseas quitar el rol de Entrenador a este usuario y volverlo Alumno?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/usuario/${id}/rol`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem('userToken')}` },
+      body: JSON.stringify({ rol: "Alumno" })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Rol actualizado");
+      cargarEntrenadoresModal();
+      contarTotalEntrenadores();
+      contarTotalUsuarios();
+    } else {
+      alert("❌ Error: " + data.error);
+    }
+  } catch (err) { console.error(err); }
 }

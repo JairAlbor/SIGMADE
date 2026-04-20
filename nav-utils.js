@@ -12,11 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const usuarioInfo = JSON.parse(usuarioInfoStr);
 
-    // 2. Colocar el nombre del usuario en el elemento de la interfaz (esquinita superior derecha)
     const elUserName = document.getElementById("userName");
     if (elUserName) {
         // Usar formato serio
-        elUserName.textContent = `Bienvenido, ${usuarioInfo.nombre} ${usuarioInfo.apellidos || ''}`;
+        elUserName.textContent = `Hola, ${usuarioInfo.nombre}`;
     }
 
     // 3. Manejo universal de funcionalidad "Cerrar sesión"
@@ -46,4 +45,24 @@ document.addEventListener("DOMContentLoaded", () => {
             irAInicio();
         };
     });
+
+    // Auto-marcar pestaña activa
+    const allNavItems = document.querySelectorAll('.nav-menu .nav-item');
+    allNavItems.forEach(item => item.classList.remove('active'));
+    
+    const pathname = window.location.pathname.toLowerCase();
+    if(pathname.includes('catalogo.html')) {
+        allNavItems.forEach(item => { if(item.textContent.toLowerCase().includes('catálogo')) item.classList.add('active'); });
+    } else if(pathname.includes('profile.html')) {
+        allNavItems.forEach(item => { if(item.textContent.toLowerCase().includes('perfil')) item.classList.add('active'); });
+    } else {
+        // Asignar inicio
+        allNavItems.forEach(item => { if(item.textContent.toLowerCase().includes('inicio')) item.classList.add('active'); });
+    }
 });
+
+window.logout = function() {
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('usuarioInfo');
+    window.location.href = "index.html"; 
+};

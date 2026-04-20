@@ -10,37 +10,38 @@
     <script src="https://unpkg.com/lucide@latest"></script>
   </head>
   <body>
-    <nav class="navbar">
-      <div class="logo">SIGMADE</div>
-
-      <ul class="nav-menu">
-        <li class="nav-item" onclick="irAInicio()">Inicio</li>
-        <li class="nav-item" onclick="window.location.href='catalogo.html'">Catalogo</li>
-        <li class="nav-item active">Perfil</li>
-      </ul>
-
-      <div class="top-bar-user">
-        <div class="notification-wrapper">
-          <i data-lucide="bell" class="icon-bell"></i>
-          <span class="notification-dot"></span>
-        </div>
-
-<div class="user-pill">
-    <div class="user-avatar">
-        <i data-lucide="user" class="icon-user"></i>
+  <nav class="navbar">
+    <div class="logo-container" style="display: flex; align-items: center; gap: 15px;">
+        <img src="LOGO-UTM.jpeg" alt="Logo" style="height: 48px; border-radius: 8px;">
+        <img src="uuutm.png" alt="UTM Logo" style="height: 48px;">
     </div>
-    <span id="userName" class="user-name">Usuario</span>
-    
-    <button onclick="logout()" class="logout-btn" title="Cerrar sesión">
-        <i data-lucide="log-out" class="icon-logout"></i>
-    </button>
-</div>
-
-          <span id="userName" class="user-name">Hola, Juan</span>
-
-       
+    <ul class="nav-menu">
+      <li class="nav-item" onclick="irAInicio()">
+        <i class="fa-solid fa-house" style="margin-right:5px;"></i>Inicio
+      </li>
+      <li class="nav-item" onclick="window.location.href='catalogo.html'">
+        <i class="fa-solid fa-box-open" style="margin-right:5px;"></i>Catálogo
+      </li>
+      <li class="nav-item" onclick="window.location.href='profile.html'">
+        <i class="fa-solid fa-user-circle" style="margin-right:5px;"></i>Perfil
+      </li>
+    </ul>
+    <div class="top-bar-user">
+      <div class="notification-wrapper">
+        <i data-lucide="bell" class="icon-bell"></i>
+        <span class="notification-dot"></span>
       </div>
-    </nav>
+      <div class="user-pill">
+        <div class="user-avatar">
+          <i data-lucide="user" class="icon-user"></i>
+        </div>
+        <span id="userName" class="user-name" style="font-size:0.9rem;">Usuario</span>
+        <button onclick="logout()" class="logout-btn" title="Cerrar sesión" style="background:transparent; border:none; color:white; cursor:pointer; padding:5px; margin-left:5px;">
+          <i data-lucide="log-out" class="icon-logout"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
 
     <section class="form-container">
       <main class="dashboard-container profile-page">
@@ -71,11 +72,11 @@
               </div>
               <div class="detail-item">
                 <i data-lucide="map-pin"></i>
-                <span>Ciudad de Morelia, México</span>
+                <span id="profileUbicacion">Sin ubicación</span>
               </div>
               <div class="detail-item">
                 <i data-lucide="calendar"></i>
-                <span>Fecha de nacimiento: 15 de Marzo, 1995</span>
+                <span id="profileNacimiento">Sin fecha de nacimiento</span>
               </div>
             </div>
           </section>

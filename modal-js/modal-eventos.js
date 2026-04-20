@@ -1,23 +1,20 @@
 // ======================== EVENTOS ========================
-let events = [
-    { id: 1, title: 'Conferencia de Tecnología 2026', date: '28 Feb 2026', time: '10:00 AM', location: 'Auditorio Principal', attendees: 45 },
-    { id: 2, title: 'Torneo de Fútbol Intercolegial', date: '5 Mar 2026', time: '3:00 PM', location: 'Cancha #1', attendees: 22 }
-];
+let eventsData = [];
 
-const overlay = document.getElementById('eventModalOverlay');
+const eventModalOverlayEl = document.getElementById('eventModalOverlay');
 const eventList = document.getElementById('eventList');
 const addForm = document.getElementById('addEventForm');
 
 function openEvents() {
-    overlay.classList.remove('hidden');
-    renderEvents();
+    if (eventModalOverlayEl) eventModalOverlayEl.classList.remove('hidden');
+    cargarEventos();
 }
 
 function closeModal() {
-    overlay.classList.add('hidden');
+    if (eventModalOverlayEl) eventModalOverlayEl.classList.add('hidden');
 }
 
-function toggleEventForm(show = true) {
+function toggleFormEventos(show = true) {
     if (show && addForm.classList.contains('hidden')) {
         addForm.classList.remove('hidden');
     } else {
@@ -25,277 +22,118 @@ function toggleEventForm(show = true) {
     }
 }
 
-function renderEvents() {
+async function cargarEventos() {
+    try {
+        const res = await fetch(`${API_BASE}/api/evento`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            eventsData = data.eventos;
+            renderEvents(eventsData);
+            if (document.getElementById('eventosCounterModal')) document.getElementById('eventosCounterModal').textContent = data.eventos.length;
+            if (document.getElementById('totalEventos')) document.getElementById('totalEventos').textContent = data.eventos.length;
+        }
+    } catch (err) { console.error('Error eventos:', err); }
+}
+
+function renderEvents(lista) {
     eventList.innerHTML = '';
-    events.forEach(event => {
+    if (lista.length === 0) {
+        eventList.innerHTML = '<p style="text-align:center; color:#9ca3af;">No hay eventos registrados</p>';
+        return;
+    }
+
+    lista.forEach(event => {
         const card = document.createElement('div');
         card.className = 'event-card';
+        card.style = 'border:1px solid #e5e7eb; border-radius:8px; margin-bottom:15px; box-shadow:0 2px 4px rgba(0,0,0,0.05);';
         card.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <h3>${event.title}</h3>
-                    <div class="event-details-grid">
-                        <span>📅 ${event.date}</span>
-                        <span>⏰ ${event.time}</span>
-                        <span>📍 ${event.location}</span>
-                        <span>👥 ${event.attendees} inscritos</span>
-                    </div>
+            <div style="display: flex; flex-direction:column; gap:6px; align-items: flex-start; padding: 15px;">
+                <div style="font-weight:bold; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="calendar" style="width:18px;"></i> ${event.titulo}
                 </div>
-                <button onclick="deleteEvent(${event.id})" style="border:none; background:none; cursor:pointer; color:red;">🗑️</button>
-            </div>
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-                <button class="btn-close-footer" style="background: white; color: #374151; border: 1px solid #d1d5db;">Ver detalles</button>
-                <button class="btn-register">Lista de asistentes</button>
+                <div style="color:#333; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="map-pin" style="width:18px;"></i> ${event.ubicacion}
+                </div>
+                <div style="color:#333; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="calendar-days" style="width:18px;"></i> ${event.fecha} a las ${event.hora_inicio}
+                </div>
+                <div style="color:#333; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="align-left" style="width:18px;"></i> ${event.descripcion || ''}
+                </div>
+                <button onclick="eliminarEvento(${event.id})" style="color:#ef4444; font-weight:bold; background:none; border:none; cursor:pointer; margin-top:10px; display:flex; align-items:center; gap:5px; padding:0;">
+                    <i data-lucide="trash-2" style="width:16px;"></i> Eliminar
+                </button>
             </div>
         `;
         eventList.appendChild(card);
     });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-function deleteEvent(id) {
-    if (confirm('¿Estás seguro de dar de baja este evento?')) {
-        events = events.filter(e => e.id !== id);
-        renderEvents();
+async function saveEvent() {
+    const titulo = document.getElementById('eventTitle').value;
+    const ubicacion = document.getElementById('eventLocation').value;
+    const fecha = document.getElementById('eventDate').value;
+    const hora = '00:00';
+    const hora_fin = '23:59';
+    const descripcion = document.getElementById('eventDesc').value;
+
+    if (!titulo || !fecha) {
+        alert("Título y fecha son obligatorios."); return;
     }
-}
-
-function saveEvent() {
-    alert('Evento guardado (simulado)');
-    toggleEventForm(false);
-}
-
-// ======================== DISCIPLINAS ========================
-function openDisciplines() {
-    document.getElementById('disciplineModalOverlay').classList.remove('hidden');
-    cargarDisciplinas();
-    cargarEntrenadoresSelect();
-}
-
-function closeDisciplines() {
-    document.getElementById('disciplineModalOverlay').classList.add('hidden');
-}
-
-function toggleDisciplineForm() {
-    const form = document.getElementById('disciplineForm');
-    form.classList.toggle('hidden');
-}
-
-async function cargarDisciplinas() {
-    try {
-        const res = await fetch('/api/disciplina', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            }
-        });
-        const data = await res.json();
-        const grid = document.getElementById('disciplineGrid');
-        grid.innerHTML = '';
-
-        if (data.success && data.disciplinas.length > 0) {
-            data.disciplinas.forEach(d => {
-                grid.innerHTML += `
-                    <div class="discipline-card" style="border: 1px solid #eee; padding: 15px; border-radius: 12px;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <div>
-                                <h4 style="margin:0; color:#333;">${d.nombre}</h4>
-                                <p style="font-size: 0.85rem; color:#666; margin: 5px 0;">Entrenador: ${d.entrenador_nombre}</p>
-                            </div>
-                            <div>
-                                <button onclick="eliminarDisciplina(${d.id})" style="border:none; background:none; cursor:pointer; color:#dc2626;" title="Eliminar">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        } else {
-            grid.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">No hay disciplinas registradas</p>';
-        }
-    } catch (err) {
-        console.error('Error cargando disciplinas:', err);
-    }
-}
-
-async function cargarEntrenadoresSelect() {
-    try {
-        const res = await fetch('/api/entrenador', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            }
-        });
-        const data = await res.json();
-        const select = document.getElementById('disciplinaEntrenador');
-        if (!select) return;
-
-        select.innerHTML = '<option value="">Sin entrenador</option>';
-        if (data.success) {
-            data.entrenadores.forEach(e => {
-                select.innerHTML += `<option value="${e.id}">${e.nombre} ${e.apellidos}</option>`;
-            });
-        }
-    } catch (err) {
-        console.error('Error cargando entrenadores:', err);
-    }
-}
-
-async function saveDisciplina() {
-    const nombre = document.getElementById('disciplinaNombre').value;
-    const entrenador_id = document.getElementById('disciplinaEntrenador').value;
-
-    if (!nombre) { alert('⚠️ El nombre de la disciplina es obligatorio'); return; }
 
     try {
-        const res = await fetch('/api/disciplina', {
+        const res = await fetch(`${API_BASE}/api/evento`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            },
-            body: JSON.stringify({ nombre, entrenador_id: entrenador_id || null })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('userToken')}` },
+            body: JSON.stringify({ titulo, descripcion, fecha, hora, hora_fin, ubicacion })
         });
         const data = await res.json();
 
         if (data.success) {
-            alert('✅ ' + data.mensaje);
-            document.getElementById('disciplinaNombre').value = '';
-            toggleDisciplineForm();
-            cargarDisciplinas();
-            if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
-        } else {
-            alert('❌ ' + data.error);
-        }
-    } catch (err) {
-        alert('❌ Error: ' + err.message);
-    }
+            alert('✅ Evento guardado');
+            toggleFormEventos(false);
+
+            // clear form
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventLocation').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventDesc').value = '';
+
+            cargarEventos();
+        } else alert('❌ ' + data.message);
+    } catch (err) { alert('❌ Error: ' + err.message); }
 }
 
-async function eliminarDisciplina(id) {
-    if (!confirm('¿Eliminar esta disciplina?')) return;
+async function eliminarEvento(id) {
+    if (!confirm("¿Deseas eliminar este evento?")) return;
     try {
-        const res = await fetch(`/api/disciplina/${id}`, { 
+        const res = await fetch(`${API_BASE}/api/evento/${id}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            }
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
         });
         const data = await res.json();
         if (data.success) {
-            alert('✅ ' + data.mensaje);
-            cargarDisciplinas();
-            if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
+            alert('Evento eliminado');
+            cargarEventos();
         } else {
-            alert('❌ ' + data.error);
+            alert('Error: ' + data.message);
         }
     } catch (err) {
-        alert('❌ Error: ' + err.message);
+        console.error(err);
     }
 }
 
+// Removido Disciplinas y Entrenadores de aquí ya que se gestionan en app3.js para evitar colisiones.
 
-async function contarTotalDisciplinas() {
-  try {
-    const response = await fetch('/api/disciplina', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-      }
-    });
-    const data = await response.json();
-    
-    // Verificamos que la consulta haya sido exitosa
-    if (data.success) {
-      const elementoTarjeta = document.getElementById('totalDisciplinas');
-      if (elementoTarjeta) {
-        // Obtenemos la cantidad de elementos en el arreglo (array) y lo mostramos
-        elementoTarjeta.textContent = data.disciplinas.length;
-      }
-    }
-  } catch (err) {
-    console.error('Error al intentar contabilizar disciplinas:', err);
-  }
-}
-
-// ======================== ENTRENADORES ========================
-function openEntrenadores() {
-    const modal = document.getElementById('trainerModalOverlay');
-    if (modal) {
-        modal.classList.remove('hidden');
-        renderEntrenadores();
-    } else {
-        console.error("❌ Modal 'trainerModalOverlay' no encontrado");
-    }
-}
-
-function closeEntrenadores() {
-    const modal = document.getElementById('trainerModalOverlay');
-    if (modal) modal.classList.add('hidden');
-}
-
-async function renderEntrenadores() {
-    try {
-        const res = await fetch('/api/entrenador', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            }
-        });
-        const data = await res.json();
-        const grid = document.getElementById('trainerGrid');
-        if (!grid) return;
-        
-        grid.innerHTML = '';
-        if (data.success && data.entrenadores.length > 0) {
-            data.entrenadores.forEach(e => {
-                grid.innerHTML += `
-                    <div class="trainer-card" style="background: white; border: 1px solid #e5e7eb; padding: 1.25rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div style="background: #f3f4f6; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #6b7280;">
-                                <i class="fa-solid fa-user-tie" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <div style="flex: 1;">
-                                <h4 style="margin: 0; color: #111827; font-size: 1rem;">${e.nombre} ${e.apellidos}</h4>
-                                <p style="margin: 0; color: #6b7280; font-size: 0.85rem;">${e.email}</p>
-                            </div>
-                            <div class="status-pill ${e.estatus === 'Activo' ? 'active' : 'inactive'}" style="font-size: 0.75rem;">
-                                ${e.estatus}
-                            </div>
-                        </div>
-                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6; display: flex; gap: 1rem;">
-                            <span style="font-size: 0.85rem; color: #4b5563;">
-                                <i class="fa-solid fa-phone" style="margin-right: 4px; color: #9ca3af;"></i> ${e.telefono || 'Sin tel.'}
-                            </span>
-                        </div>
-                    </div>
-                `;
-            });
-        } else {
-            grid.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">No hay entrenadores registrados</p>';
-        }
-    } catch (err) {
-        console.error('Error al renderizar entrenadores:', err);
-    }
-}
-
-async function contarTotalEntrenadores() {
-    try {
-        const res = await fetch('/api/entrenador', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            }
-        });
-        const data = await res.json();
-        if (data.success) {
-            const el = document.getElementById('totalEntrenadores');
-            if (el) el.textContent = data.entrenadores.length;
-        }
-    } catch (err) {
-        console.error('Error al contar entrenadores:', err);
-    }
-}
 
 
 
 // ======================== PRÉSTAMOS ========================
 let prestamosData = [];
+let currentPrestamosTab = 'encurso';
 
 function openPrestamos() {
     document.getElementById('prestamoModalOverlay').classList.remove('hidden');
@@ -303,6 +141,7 @@ function openPrestamos() {
     cargarStatsPrestamos();
     cargarSelectUsuarios();
     cargarSelectMateriales();
+    switchPrestamosTab('encurso', document.getElementById('tabEnCurso'));
 }
 
 function closePrestamos() {
@@ -312,30 +151,57 @@ function closePrestamos() {
 function toggleFormPrestamo() {
     const form = document.getElementById('addPrestamoForm');
     form.classList.toggle('hidden');
+    ocultarConflictos();
+}
 
-    // Auto-poblar fecha de solicitud al abrir el formulario
-    if (!form.classList.contains('hidden')) {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        const dateStr = now.toISOString().slice(0, 16);
-        const elSol = document.getElementById('prestamoFechaSolicitud');
-        if (elSol) elSol.value = dateStr;
+function switchPrestamosTab(tab, btn) {
+    currentPrestamosTab = tab;
+
+    // Update button styles
+    const buttons = document.querySelectorAll('.tab-button');
+    buttons.forEach(b => {
+        b.style.color = '#6b7280';
+        b.style.borderBottom = '2px solid transparent';
+        b.style.fontWeight = 'normal';
+    });
+    if (btn) {
+        btn.style.color = 'var(--guinda)';
+        btn.style.borderBottom = '2px solid var(--guinda)';
+        btn.style.fontWeight = 'bold';
     }
 
-    // Limpiar alert de conflictos al abrir/cerrar
-    ocultarConflictos();
+    // Update filter options based on tab
+    const select = document.getElementById('filterStatus');
+    if (tab === 'encurso') {
+        select.innerHTML = `
+          <option value="">Estados (Todos)</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Abierto">Abierto</option>
+          <option value="Activo">Activo</option>
+          <option value="Retraso">Vencido / Retraso</option>
+        `;
+    } else {
+        select.innerHTML = `
+          <option value="">Estados (Todos)</option>
+          <option value="Cerrado">Cerrado / Finalizado</option>
+          <option value="Entregado">Entregado / Devuelto</option>
+          <option value="Cancelado">Cancelado / Rechazado</option>
+        `;
+    }
+
+    aplicarFiltrosPrestamos();
 }
 
 // ====== CARGAR Y RENDERIZAR ======
 async function cargarPrestamos() {
     try {
-        const res = await fetch('/api/prestamo', {
+        const res = await fetch(`${API_BASE}/api/prestamo`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
         });
         const data = await res.json();
         if (data.success) {
             prestamosData = data.prestamos;
-            renderPrestamos(prestamosData);
+            aplicarFiltrosPrestamos();
         }
     } catch (err) {
         console.error('Error:', err);
@@ -355,24 +221,35 @@ function renderPrestamos(prestamos) {
     }
 
     prestamos.forEach(p => {
-        const pillClass  = getEstadoPillClass(p.estado_general);
-        const fechaSol   = formatFecha(p.fecha_solicitud);
-        const fechaLim   = formatFecha(p.fecha_limite);
-        const fechaEnt   = p.fecha_entrega ? formatFecha(p.fecha_entrega) : '<span style="color:#9ca3af;">—</span>';
+        const pillClass = getEstadoPillClass(p.estado_general);
+        const fechaSol = formatFecha(p.fecha_solicitud);
+        const fechaLim = formatFecha(p.fecha_limite);
+        const fechaEnt = p.fecha_entrega ? formatFecha(p.fecha_entrega) : '<span style="color:#9ca3af;">—</span>';
         const materiales = p.materiales || 'Sin material';
 
         // Badge de tipo de material (cancha vs deportivo)
         const tieneCancha = (p.materiales || '').toLowerCase().includes('cancha') ||
-                            (p.tipo_material || '').toLowerCase().includes('cancha');
-        const tipoBadge   = tieneCancha
+            (p.tipo_material || '').toLowerCase().includes('cancha');
+        const tipoBadge = tieneCancha
             ? `<span class="badge-cancha"><i class="fa-solid fa-table-tennis-paddle-ball"></i> Cancha</span>`
             : `<span class="badge-material"><i class="fa-solid fa-box"></i> Material</span>`;
 
-        const esActivo = ['Abierto','Activo','Renovado','Pendiente'].includes(p.estado_general);
+        const esPendiente = ['Pendiente'].includes(p.estado_general);
+        const esActivo = ['Abierto', 'Activo', 'Renovado', 'Retraso', 'Vencido'].includes(p.estado_general);
         let acciones = '';
-        if (esActivo) {
+
+        if (esPendiente) {
             acciones = `
-                <button class="btn-icon edit" title="Finalizar" onclick="finalizarPrestamo(${p.id})" style="color:#16a34a;">
+                <button class="btn-icon edit" title="Aceptar Préstamo" onclick="aceptarPrestamo(${p.id})" style="color:#16a34a;">
+                    <i class="fa-solid fa-check-double"></i>
+                </button>
+                <button class="btn-icon delete" title="Rechazar Préstamo" onclick="rechazarPrestamo(${p.id})" style="color:#dc2626;">
+                    <i class="fa-solid fa-ban"></i>
+                </button>
+            `;
+        } else if (esActivo) {
+            acciones = `
+                <button class="btn-icon edit" title="Entregar/Finalizar" onclick="abrirFinalizarPrestamo(${p.id})" style="color:#16a34a;">
                     <i class="fa-solid fa-circle-check"></i>
                 </button>
                 <button class="btn-icon edit" title="Renovar" onclick="renovarPrestamo(${p.id})" style="color:#2563eb;">
@@ -380,28 +257,27 @@ function renderPrestamos(prestamos) {
                 </button>
                 <button class="btn-icon edit" title="Sancionar" onclick="sancionarDesdePrestamo(${p.id})" style="color:#d97706;">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                </button>
-                <button class="btn-icon delete" title="Eliminar" onclick="eliminarPrestamo(${p.id})">
-                    <i class="fa-solid fa-trash"></i>
                 </button>`;
         } else {
-            acciones = `<button class="btn-icon delete" title="Eliminar" onclick="eliminarPrestamo(${p.id})">
-                <i class="fa-solid fa-trash"></i></button>`;
+            acciones = `
+                <button class="btn-icon delete" title="Eliminar del registro" onclick="eliminarPrestamo(${p.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>`;
         }
 
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><strong>#${p.id}</strong></td>
-            <td><div class="user-cell"><div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div><div><span class="user-cell-name">${p.usuario_nombre} ${p.usuario_apellidos||''}</span><span class="user-cell-id">${p.usuario_matricula||''}</span></div></div></td>
+            <td><div class="user-cell"><div class="user-cell-avatar"><i class="fa-solid fa-user"></i></div><div><span class="user-cell-name">${p.usuario_nombre} ${p.usuario_apellidos || ''}</span><span class="user-cell-id">${p.usuario_matricula || ''}</span></div></div></td>
             <td>
               <span class="material-tag">${materiales}</span>
               <div style="margin-top:4px;">${tipoBadge}</div>
             </td>
             <td>${fechaSol}</td>
             <td>${fechaLim}</td>
-            <td><span class="status-pill ${pillClass}"><i class="fa-solid fa-circle" style="font-size:6px;"></i> ${p.estado_general||'N/A'}</span></td>
+            <td><span class="status-pill ${pillClass}"><i class="fa-solid fa-circle" style="font-size:6px;"></i> ${p.estado_general || 'N/A'}</span></td>
             <td>${fechaEnt}</td>
-            <td><small>${p.observaciones||''}</small></td>
+            <td><small>${p.observaciones || ''}</small></td>
             <td><div class="actions">${acciones}</div></td>`;
         tbody.appendChild(row);
     });
@@ -412,9 +288,7 @@ function renderPrestamos(prestamos) {
 // ====== KPIs ======
 async function cargarStatsPrestamos() {
     try {
-        const res = await fetch('/api/prestamo/stats', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
-        });
+        const res = await fetch(`${API_BASE}/api/prestamo/stats`);
         const data = await res.json();
         if (data.success) {
             // Stats dentro del modal de gestión
@@ -434,15 +308,13 @@ async function cargarStatsPrestamos() {
 // ====== SELECTS DINÁMICOS ======
 async function cargarSelectUsuarios() {
     try {
-        const res = await fetch('/api/usuario', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
-        });
+        const res = await fetch(`${API_BASE}/api/usuario`);
         const data = await res.json();
         const select = document.getElementById('prestamoUsuario');
         select.innerHTML = '<option value="">Seleccionar usuario...</option>';
         if (data.success) {
             data.usuarios.filter(u => u.estatus === 'Activo').forEach(u => {
-                select.innerHTML += `<option value="${u.id}">${u.nombre} ${u.apellidos||''} - ${u.identificador||''}</option>`;
+                select.innerHTML += `<option value="${u.id}">${u.nombre} ${u.apellidos || ''} - ${u.identificador || ''}</option>`;
             });
         }
     } catch (err) { console.error('Error:', err); }
@@ -450,9 +322,7 @@ async function cargarSelectUsuarios() {
 
 async function cargarSelectMateriales() {
     try {
-        const res = await fetch('/api/articulo/disponibles', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
-        });
+        const res = await fetch(`${API_BASE}/api/articulo/disponibles`);
         const data = await res.json();
         const container = document.getElementById('materialesCheckboxContainer');
 
@@ -461,7 +331,7 @@ async function cargarSelectMateriales() {
             if (!select) return;
             select.innerHTML = '<option value="">Seleccionar material...</option>';
             if (data.success) data.materiales.forEach(a => {
-                select.innerHTML += `<option value="${a.id}">${a.nombre_material} (${a.nombre_disciplina||'Sin disc.'})</option>`;
+                select.innerHTML += `<option value="${a.id}">${a.nombre_material} (${a.nombre_disciplina || 'Sin disc.'})</option>`;
             });
             return;
         }
@@ -514,7 +384,7 @@ function ocultarConflictos() {
 
 function mostrarConflictos(conflictos) {
     const alertDiv = document.getElementById('conflictosAlert');
-    const lista    = document.getElementById('conflictosLista');
+    const lista = document.getElementById('conflictosLista');
     if (!alertDiv || !lista) {
         // fallback: alert nativo
         alert('⚠️ Conflicto de reserva:\n' + conflictos.map(c =>
@@ -528,7 +398,7 @@ function mostrarConflictos(conflictos) {
             <span style="background:#fef3c7; color:#92400e; padding:1px 7px; border-radius:8px; font-size:0.78rem; margin-left:6px;">${c.tipo}</span><br>
             <span style="font-size:0.82rem;">
                 <i class="fa-solid fa-user" style="color:#d97706;"></i> ${c.reservado_por} &nbsp;—&nbsp;
-                <i class="fa-solid fa-calendar-xmark" style="color:#d97706;"></i> Reservado hasta: <strong>${new Date(c.reservado_hasta).toLocaleString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</strong>
+                <i class="fa-solid fa-calendar-xmark" style="color:#d97706;"></i> Reservado hasta: <strong>${new Date(c.reservado_hasta).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong>
             </span>
         </li>`).join('');
     alertDiv.classList.remove('hidden');
@@ -536,7 +406,7 @@ function mostrarConflictos(conflictos) {
 }
 
 async function savePrestamo() {
-    const usuario_id   = document.getElementById('prestamoUsuario').value;
+    const usuario_id = document.getElementById('prestamoUsuario').value;
     const fecha_limite = document.getElementById('prestamoFechaLimite').value;
     const observaciones = document.getElementById('prestamoObservaciones').value;
 
@@ -560,12 +430,8 @@ async function savePrestamo() {
     ocultarConflictos();
 
     try {
-        const res  = await fetch('/api/prestamo', {
-            method: 'POST', 
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            },
+        const res = await fetch(`${API_BASE}/api/prestamo`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ usuario_id, material_ids, fecha_limite, observaciones })
         });
         const data = await res.json();
@@ -594,8 +460,8 @@ async function savePrestamo() {
 // Toast para admin panel
 function mostrarToastAdmin(mensaje, tipo) {
     const colors = {
-        success: { bg:'#f0fdf4', border:'#bbf7d0', color:'#15803d' },
-        error:   { bg:'#fef2f2', border:'#fecaca', color:'#dc2626' },
+        success: { bg: '#f0fdf4', border: '#bbf7d0', color: '#15803d' },
+        error: { bg: '#fef2f2', border: '#fecaca', color: '#dc2626' },
     };
     const c = colors[tipo] || colors.success;
     let container = document.getElementById('toast-container');
@@ -613,21 +479,54 @@ function mostrarToastAdmin(mensaje, tipo) {
     setTimeout(() => toast.remove(), 3500);
 }
 
-// ====== FINALIZAR ======
-async function finalizarPrestamo(id) {
-    const obs = prompt('Observaciones al finalizar (opcional):');
-    if (obs === null) return;
+// ====== ACCIONES CONDICIONALES ======
+async function aceptarPrestamo(id) {
+    if (!confirm('¿Aceptar este préstamo e iniciar el periodo?')) return;
     try {
-        const res = await fetch(`/api/prestamo/${id}/finalizar`, {
-            method: 'POST', 
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            },
+        const res = await fetch(`${API_BASE}/api/prestamo/${id}/estatus`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('userToken')}` },
+            body: JSON.stringify({ estatus: 'Activo' })
+        });
+        const data = await res.json();
+        if (data.success) { alert('✅ Préstamo aceptado.'); cargarPrestamos(); cargarStatsPrestamos(); }
+        else alert('❌ ' + data.message);
+    } catch (err) { alert('❌ Error: ' + err.message); }
+}
+
+async function rechazarPrestamo(id) {
+    if (!confirm('¿Rechazar este préstamo?')) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/prestamo/${id}/estatus`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('userToken')}` },
+            body: JSON.stringify({ estatus: 'Cancelado' })
+        });
+        const data = await res.json();
+        if (data.success) { alert('✅ Préstamo rechazado.'); cargarPrestamos(); cargarStatsPrestamos(); cargarSelectMateriales(); }
+        else alert('❌ ' + data.message);
+    } catch (err) { alert('❌ Error: ' + err.message); }
+}
+
+function abrirFinalizarPrestamo(id) {
+    document.getElementById('finPrestamoId').value = id;
+    document.getElementById('finPrestamoObs').value = '';
+    document.getElementById('finalizarPrestamoModalOverlay').classList.remove('hidden');
+}
+
+async function confirmarFinalizarPrestamo() {
+    const id = document.getElementById('finPrestamoId').value;
+    const obs = document.getElementById('finPrestamoObs').value;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/prestamo/${id}/finalizar`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('userToken')}` },
             body: JSON.stringify({ observaciones: obs })
         });
         const data = await res.json();
-        if (data.success) { alert('✅ ' + data.mensaje); cargarPrestamos(); cargarStatsPrestamos(); cargarSelectMateriales(); }
+        if (data.success) {
+            mostrarToastAdmin('✅ Material entregado correctamente.', 'success');
+            document.getElementById('finalizarPrestamoModalOverlay').classList.add('hidden');
+            cargarPrestamos(); cargarStatsPrestamos(); cargarSelectMateriales();
+        }
         else alert('❌ ' + data.error);
     } catch (err) { alert('❌ Error: ' + err.message); }
 }
@@ -637,12 +536,8 @@ async function renovarPrestamo(id) {
     const dias = prompt('¿Cuántos días agregar?', '3');
     if (!dias || isNaN(dias) || parseInt(dias) < 1) return;
     try {
-        const res = await fetch(`/api/prestamo/${id}/renovar`, {
-            method: 'PUT', 
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            },
+        const res = await fetch(`${API_BASE}/api/prestamo/${id}/renovar`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ dias: parseInt(dias) })
         });
         const data = await res.json();
@@ -657,12 +552,8 @@ async function sancionarDesdePrestamo(id) {
     if (!motivo) return;
     if (!confirm(`¿Sancionar al usuario?\nMotivo: ${motivo}`)) return;
     try {
-        const res = await fetch(`/api/prestamo/${id}/sancionar`, {
-            method: 'POST', 
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-            },
+        const res = await fetch(`${API_BASE}/api/prestamo/${id}/sancionar`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ motivo })
         });
         const data = await res.json();
@@ -675,23 +566,102 @@ async function sancionarDesdePrestamo(id) {
 async function eliminarPrestamo(id) {
     if (!confirm('¿Eliminar este préstamo?')) return;
     try {
-        const res = await fetch(`/api/prestamo/${id}`, { 
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
-        });
+        const res = await fetch(`${API_BASE}/api/prestamo/${id}`, { method: 'DELETE' });
         const data = await res.json();
         if (data.success) { alert('✅ ' + data.mensaje); cargarPrestamos(); cargarStatsPrestamos(); cargarSelectMateriales(); }
         else alert('❌ ' + data.error);
     } catch (err) { alert('❌ Error: ' + err.message); }
 }
 
-// ====== FILTRAR ======
-function filtrarPrestamos() {
+// ====== FILTRAR Y TABS ======
+function aplicarFiltrosPrestamos() {
     const q = document.getElementById('searchPrestamo').value.toLowerCase();
-    const filtrados = prestamosData.filter(p => {
-        return `${p.usuario_nombre} ${p.usuario_apellidos} ${p.usuario_matricula} ${p.materiales} ${p.estado_general} ${p.observaciones}`.toLowerCase().includes(q);
+    const fStart = document.getElementById('filterDateStart').value;
+    const fEnd = document.getElementById('filterDateEnd').value;
+    const status = document.getElementById('filterStatus').value;
+
+    let filtrados = prestamosData.filter(p => {
+        // Tab filter
+        let showInTab = false;
+        const state = p.estado_general || '';
+        if (currentPrestamosTab === 'encurso') {
+            showInTab = ['Pendiente', 'Abierto', 'Activo', 'Retraso', 'Vencido', 'Renovado'].includes(state);
+        } else {
+            showInTab = ['Cerrado', 'Finalizado', 'Entregado', 'Devuelto', 'Cancelado', 'Denegado'].includes(state);
+        }
+        if (!showInTab) return false;
+
+        // Search text
+        if (q && !`${p.usuario_nombre} ${p.usuario_apellidos} ${p.usuario_matricula} ${p.materiales} ${p.estado_general} ${p.observaciones}`.toLowerCase().includes(q)) {
+            return false;
+        }
+
+        // Status specific
+        if (status && state !== status) return false;
+
+        // Date range
+        if (fStart || fEnd) {
+            const reqDate = new Date(p.fecha_solicitud);
+            if (fStart && reqDate < new Date(fStart + 'T00:00:00')) return false;
+            if (fEnd && reqDate > new Date(fEnd + 'T23:59:59')) return false;
+        }
+
+        return true;
     });
+
     renderPrestamos(filtrados);
+}
+
+function limpiarFiltrosPrestamos() {
+    document.getElementById('searchPrestamo').value = '';
+    document.getElementById('filterDateStart').value = '';
+    document.getElementById('filterDateEnd').value = '';
+    document.getElementById('filterStatus').value = '';
+    aplicarFiltrosPrestamos();
+}
+
+// ====== Generador PDF ======
+function descargarPDFPrestamos() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+
+    doc.setFontSize(18);
+    doc.text('Reporte de Préstamos - SIGMADE', 14, 22);
+    doc.setFontSize(11);
+    doc.text('Generado: ' + new Date().toLocaleString(), 14, 30);
+
+    const rows = [];
+    // Only get visible rows from table
+    const tableRows = document.querySelectorAll('#tablaPrestamosBody tr');
+
+    if (tableRows.length === 0 || tableRows[0].cells.length === 1) {
+        alert("No hay datos para exportar"); return;
+    }
+
+    tableRows.forEach(tr => {
+        if (tr.cells.length > 2) {
+            rows.push([
+                tr.cells[0].innerText, // ID
+                tr.cells[1].innerText.replace(/\n/g, ' '), // Usuario
+                tr.cells[2].innerText.replace(/\n/g, ' '), // Materiales
+                tr.cells[3].innerText.replace(/\n/g, ' '), // Fecha Sol
+                tr.cells[4].innerText.replace(/\n/g, ' '), // Fecha Lim
+                tr.cells[5].innerText.replace(/\n/g, ' '), // Estado
+                tr.cells[6].innerText.replace(/\n/g, ' ')  // Entrega
+            ]);
+        }
+    });
+
+    doc.autoTable({
+        startY: 35,
+        head: [['ID', 'Usuario', 'Material(es)', 'F. Solicitud', 'F. Límite', 'Estado', 'Entrega']],
+        body: rows,
+        theme: 'grid',
+        headStyles: { fillColor: [128, 0, 0] }, // Guinda
+        styles: { fontSize: 8 }
+    });
+
+    doc.save('Reporte_Prestamos_' + Date.now() + '.pdf');
 }
 
 // ====== UTILIDADES ======
@@ -710,12 +680,12 @@ function getEstadoPillClass(estado) {
 function formatFecha(fechaStr) {
     if (!fechaStr) return '<span style="color:#9ca3af;">—</span>';
     const f = new Date(fechaStr);
-    const dia = f.getDate().toString().padStart(2,'0');
-    const mes = (f.getMonth()+1).toString().padStart(2,'0');
+    const dia = f.getDate().toString().padStart(2, '0');
+    const mes = (f.getMonth() + 1).toString().padStart(2, '0');
     const hrs = f.getHours();
-    const min = f.getMinutes().toString().padStart(2,'0');
+    const min = f.getMinutes().toString().padStart(2, '0');
     const ampm = hrs >= 12 ? 'PM' : 'AM';
-    const h12 = (hrs % 12 || 12).toString().padStart(2,'0');
+    const h12 = (hrs % 12 || 12).toString().padStart(2, '0');
     return `${dia}/${mes}/${f.getFullYear()}<br><small style="color:#9ca3af;">${h12}:${min} ${ampm}</small>`;
 }
 
@@ -725,4 +695,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cargar también disciplinas y entrenadores si es necesario para el dashboard principal
     if (typeof contarTotalDisciplinas === 'function') contarTotalDisciplinas();
     if (typeof contarTotalEntrenadores === 'function') contarTotalEntrenadores();
-});
+});
