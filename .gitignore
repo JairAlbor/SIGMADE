@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend / DB
+backend/public/uploads/materials/*
+!backend/public/uploads/materials/.gitkeep
+scratch/
+.env
+
+# SIGMADE Temp
+*.tmp
+*.bak
