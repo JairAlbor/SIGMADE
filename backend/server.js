@@ -33,7 +33,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Asegurar que la columna 'imagen' exista en la tabla 'material'
+// Asegurar que  la columna 'imagen' exista en la tabla 'material'
 (async () => {
     try {
         const columns = await query("SHOW COLUMNS FROM material LIKE 'imagen'");
@@ -418,8 +418,8 @@ app.get('/api/prestamo/stats', verificarToken, async (req, res) => {
         const results = await query(sql);
         const row = results[0] || {};
 
-        const data = { 
-            success: true, 
+        const data = {
+            success: true,
             total: Number(row.total) || 0,
             activos: Number(row.activos) || 0,
             vencidos: Number(row.vencidos) || 0,
@@ -427,7 +427,7 @@ app.get('/api/prestamo/stats', verificarToken, async (req, res) => {
             finalizados: Number(row.finalizados) || 0,
             vencen_hoy: Number(row.vencen_hoy) || 0
         };
-        
+
         console.log('📊 [DEBUG STATS] CALCULATED:', data);
         res.json(data);
     } catch (err) {
@@ -482,7 +482,7 @@ app.get('/api/prestamo/usuario/:id', verificarToken, async (req, res) => {
 // 4. Crear un nuevo préstamo (Admin)
 app.post('/api/prestamo', verificarToken, async (req, res) => {
     const { usuario_id, material_ids, fecha_limite, observaciones, fecha_inicio } = req.body;
-    
+
     if (!usuario_id || !material_ids || !fecha_limite || material_ids.length === 0) {
         return res.status(400).json({ success: false, message: 'Faltan datos obligatorios' });
     }
@@ -516,9 +516,9 @@ app.post('/api/prestamo', verificarToken, async (req, res) => {
                 [numeric_uid]
             );
             if (prestamosActivos.length > 0) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Ya tienes un préstamo activo o una solicitud pendiente. Finalízalo antes de pedir más.' 
+                return res.status(400).json({
+                    success: false,
+                    message: 'Ya tienes un préstamo activo o una solicitud pendiente. Finalízalo antes de pedir más.'
                 });
             }
         }
@@ -530,9 +530,9 @@ app.post('/api/prestamo', verificarToken, async (req, res) => {
         );
         if (materialesMalEstado.length > 0) {
             const nombres = materialesMalEstado.map(m => m.nombre).join(', ');
-            return res.status(400).json({ 
-                success: false, 
-                message: `Los siguientes materiales no están disponibles por mantenimiento: ${nombres}` 
+            return res.status(400).json({
+                success: false,
+                message: `Los siguientes materiales no están disponibles por mantenimiento: ${nombres}`
             });
         }
 
@@ -585,7 +585,7 @@ app.post('/api/prestamo/:id/finalizar', verificarToken, async (req, res) => {
     try {
         // 1. Obtener los materiales vinculados antes de marcar como finalizado
         const materiales = await query('SELECT material_id FROM detalle_prestamo WHERE prestamo_id = ?', [id]);
-        
+
         // 2. Actualizar el cabezal del préstamo
         await query(
             'UPDATE prestamo SET estado_general = "Finalizado", fecha_entrega = NOW(), observaciones = CONCAT(IFNULL(observaciones,""), ?) WHERE id = ?',
@@ -634,7 +634,7 @@ app.post('/api/prestamo/:id/sancionar', verificarToken, async (req, res) => {
 
         // Actualizar usuario
         await query('UPDATE usuario SET estatus = "Sancionado", motivo_sancion = ? WHERE id = ?', [motivo, usuarioId]);
-        
+
         // Actualizar préstamo
         await query('UPDATE prestamo SET estado_general = "Sancionado" WHERE id = ?', [id]);
 
@@ -694,7 +694,7 @@ app.post('/api/articulo', verificarToken, upload.single('imagen'), async (req, r
 
     try {
         const queryStr = 'INSERT INTO material (nombre, disciplina_id, estado, tipoMaterial, disponible, imagen, descripcion) VALUES (?, ?, ?, ?, "Libre", ?, ?)';
-        
+
         let primerInsertId = null;
         for (let i = 0; i < cantidad; i++) {
             const resObj = await query(queryStr, [nombre, disciplina_id, estado, tipoMaterial, imagen, descripcionArticulo]);
@@ -723,9 +723,9 @@ app.delete('/api/articulo/:id', verificarToken, async (req, res) => {
         // 1. Obtener características del artículo para identificar su grupo
         const articulos = await query('SELECT nombre, disciplina_id FROM material WHERE id = ?', [id]);
         if (articulos.length === 0) return res.status(404).json({ success: false, error: 'Artículo no encontrado' });
-        
+
         const { nombre, disciplina_id } = articulos[0];
-        
+
         // 2. Buscar todos los IDs de ese grupo que no estén eliminados
         // Priorizamos los que están "Libre" para no borrar algo que esté en préstamo
         // Usamos <=> (null-safe equality) para que funcione con disciplina_id NULL
@@ -734,11 +734,11 @@ app.delete('/api/articulo/:id', verificarToken, async (req, res) => {
             WHERE nombre = ? AND disciplina_id <=> ? AND estado != "Eliminado" 
             ORDER BY (disponible = 'Libre') DESC, id ASC
         `, [nombre, disciplina_id]);
-        
+
         if (grupo.length === 0) return res.status(404).json({ success: false, error: 'Unidades no encontradas' });
-        
+
         let idsABorrar = grupo.map(g => g.id);
-        
+
         // Si no es "todas", limitamos la cantidad
         if (cantidad && cantidad !== 'todas') {
             const numLimit = parseInt(cantidad);
@@ -750,20 +750,20 @@ app.delete('/api/articulo/:id', verificarToken, async (req, res) => {
         // 3. Revisar cuáles tienen historial
         const historiales = await query('SELECT material_id FROM detalle_prestamo WHERE material_id IN (?)', [idsABorrar]);
         const idsConHistorial = historiales.map(h => h.material_id);
-        
+
         const idsSoftDelete = idsABorrar.filter(id => idsConHistorial.includes(id));
         const idsHardDelete = idsABorrar.filter(id => !idsConHistorial.includes(id));
-        
+
         // Soft delete
         if (idsSoftDelete.length > 0) {
             await query('UPDATE material SET estado = "Eliminado" WHERE id IN (?)', [idsSoftDelete]);
         }
-        
+
         // Hard delete
         if (idsHardDelete.length > 0) {
             await query('DELETE FROM material WHERE id IN (?)', [idsHardDelete]);
         }
-        
+
         res.json({ success: true, mensaje: `Se eliminaron ${idsABorrar.length} unidades del artículo.` });
     } catch (err) {
         console.error('❌ Error en DELETE /api/articulo:', err);
@@ -812,13 +812,13 @@ app.put('/api/articulo/:id', verificarToken, upload.single('imagen'), async (req
             SET nombre = ?, disciplina_id = ?, estado = ?, tipoMaterial = ?, imagen = ?, descripcion = ?
             WHERE nombre = ? AND disciplina_id <=> ? AND estado != 'Eliminado'
         `;
-        
+
         await query(updateSql, [
-            nombre, 
-            disciplina_id, 
-            estado, 
-            tipoMaterial, 
-            finalImg, 
+            nombre,
+            disciplina_id,
+            estado,
+            tipoMaterial,
+            finalImg,
             descripcion,
             oldNombre,
             oldDisc
@@ -834,11 +834,11 @@ app.put('/api/articulo/:id', verificarToken, upload.single('imagen'), async (req
 //endpoint para editar un artículo (Historia de préstamos)
 app.get('/api/perfil/historial', verificarToken, async (req, res) => {
     try {
-        const usuario_id = req.userToken.id; 
+        const usuario_id = req.userToken.id;
         if (!usuario_id) return res.status(401).json({ success: false, message: 'ID de usuario no encontrado en el token.' });
 
         console.log('📜 Historial Solicitado - Usuario ID:', usuario_id);
-        
+
         const sql = `
             SELECT 
                 p.id, p.fecha_solicitud, p.fecha_limite, p.fecha_entrega,
