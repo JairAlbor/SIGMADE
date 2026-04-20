@@ -135,7 +135,7 @@ app.post('/api/login', (req, res) => {
     }
 
     connection.query(
-        'SELECT identificador, nombre, apellidos, email, pass, rol, telefono,estatus,created_at, ubicacion, fecha_nacimiento FROM usuario WHERE email = ? OR identificador = ? LIMIT 1',
+        'SELECT id, identificador, nombre, apellidos, email, pass, rol, telefono,estatus,created_at, ubicacion, fecha_nacimiento FROM usuario WHERE email = ? OR identificador = ? LIMIT 1',
         [credencial, credencial],
         (err, rows) => {
             if (err) {
@@ -363,20 +363,36 @@ app.get('/api/usuario/num', verificarToken, (req, res) => {
 
 
 // ======================== PRÉSTAMOS (Admin) ========================
-// 1. Obtener materiales agrupados por DISPONIBILIDAD (Para el formulario de préstamos)
+// 1. Obtener materiales DISPONIBLES (Para formularios de préstamos: Admin y Alumno)
 app.get('/api/articulo/disponibles', verificarToken, async (req, res) => {
     try {
         const sql = `
             SELECT 
-                m.nombre AS nombre_material, 
-                d.nombre AS nombre_disciplina, 
+                m.id,
+                m.nombre, 
+                m.nombre AS nombre_material,
+                m.imagen AS foto_url,
+                m.imagen,
+                m.estado,
+                m.tipoMaterial,
                 m.disciplina_id,
-                COUNT(*) AS cantidad_disponible,
-                GROUP_CONCAT(m.id) AS ids_disponibles
+                d.nombre AS nombre_disciplina,
+                CONCAT(
+                    UPPER(LEFT(IFNULL(d.nombre, 'GEN'), 3)),
+                    '-',
+                    UPPER(LEFT(IFNULL(m.nombre, 'MAT'), 3)),
+                    '-',
+                    LPAD(m.id, 5, '0')
+                ) AS codigo_material,
+                (SELECT COUNT(*) FROM material m2 
+                 WHERE m2.nombre = m.nombre 
+                 AND (m2.disciplina_id = m.disciplina_id OR (m2.disciplina_id IS NULL AND m.disciplina_id IS NULL))
+                 AND m2.disponible = 'Libre' AND m2.estado != 'Eliminado'
+                ) AS cantidad_disponible
             FROM material m
             LEFT JOIN disciplina d ON m.disciplina_id = d.id
             WHERE m.disponible = 'Libre' AND m.estado != 'Eliminado'
-            GROUP BY m.nombre, m.disciplina_id, d.nombre
+            ORDER BY d.nombre, m.nombre
         `;
         const results = await query(sql);
         res.json({ success: true, materiales: results });
@@ -392,34 +408,28 @@ app.get('/api/prestamo/stats', verificarToken, async (req, res) => {
         const sql = `
             SELECT 
                 COUNT(*) AS total,
-                -- Activos: En curso
-                IFNULL(SUM(CASE WHEN estado_general IN ('Abierto', 'Activo', 'Renovado') THEN 1 ELSE 0 END), 0) AS abiertos,
-                
-                -- Vencidos: Mezcla de retrasados activos Y finalizados Y sancionados (petición de usuario)
-                IFNULL(SUM(CASE 
-                    WHEN (estado_general IN ('Abierto', 'Activo', 'Renovado') AND fecha_limite < NOW()) 
-                         OR estado_general IN ('Finalizado', 'Cerrado', 'Sancionado') THEN 1 ELSE 0 
-                END), 0) AS retraso,
-                
-                -- Finalizados (para uso interno si se requiere separado)
-                IFNULL(SUM(CASE WHEN estado_general IN ('Finalizado', 'Cerrado') THEN 1 ELSE 0 END), 0) AS cerrados,
-                
-                -- Vencen hoy: Límite es hoy
-                IFNULL(SUM(CASE WHEN DATE(fecha_limite) = CURRENT_DATE THEN 1 ELSE 0 END), 0) AS vencen_hoy
+                SUM(CASE WHEN LOWER(estado_general) IN ('abierto', 'activo', 'renovado', 'entregado') AND (fecha_limite >= NOW() OR fecha_limite IS NULL) THEN 1 ELSE 0 END) AS activos,
+                SUM(CASE WHEN LOWER(estado_general) IN ('abierto', 'activo', 'renovado', 'entregado') AND fecha_limite < NOW() THEN 1 ELSE 0 END) AS vencidos,
+                SUM(CASE WHEN LOWER(estado_general) = 'pendiente' THEN 1 ELSE 0 END) AS pendientes,
+                SUM(CASE WHEN LOWER(estado_general) IN ('finalizado', 'cerrado') THEN 1 ELSE 0 END) AS finalizados,
+                SUM(CASE WHEN DATE(fecha_limite) = CURRENT_DATE AND LOWER(estado_general) != 'finalizado' THEN 1 ELSE 0 END) AS vencen_hoy
             FROM prestamo
         `;
         const results = await query(sql);
-        
-        console.log('📊 Dashboard Stats calculated:', results[0]);
+        const row = results[0] || {};
 
-        res.json({ 
+        const data = { 
             success: true, 
-            total: Number(results[0].total) || 0,
-            abiertos: Number(results[0].abiertos) || 0,     // Préstamos Activos
-            retraso: Number(results[0].retraso) || 0,       // Vencidos (incluye finalizados y sancionados)
-            cerrados: Number(results[0].cerrados) || 0,
-            vencen_hoy: Number(results[0].vencen_hoy) || 0  // Vencen hoy
-        });
+            total: Number(row.total) || 0,
+            activos: Number(row.activos) || 0,
+            vencidos: Number(row.vencidos) || 0,
+            pendientes: Number(row.pendientes) || 0,
+            finalizados: Number(row.finalizados) || 0,
+            vencen_hoy: Number(row.vencen_hoy) || 0
+        };
+        
+        console.log('📊 [DEBUG STATS] CALCULATED:', data);
+        res.json(data);
     } catch (err) {
         console.error('❌ Error stats préstamos:', err);
         res.status(500).json({ success: false, error: 'Error al obtener estadísticas de préstamos' });
@@ -449,26 +459,122 @@ app.get('/api/prestamo', verificarToken, async (req, res) => {
     }
 });
 
+// 3.1 Obtener historial de préstamos por usuario (específicamente para Dashboard de Alumno)
+app.get('/api/prestamo/usuario/:id', verificarToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const prestamos = await query(`
+            SELECT p.*, GROUP_CONCAT(m.nombre SEPARATOR ', ') as materiales 
+            FROM prestamo p
+            JOIN detalle_prestamo dp ON p.id = dp.prestamo_id
+            JOIN material m ON dp.material_id = m.id
+            WHERE p.usuario_id = ?
+            GROUP BY p.id
+            ORDER BY p.fecha_solicitud DESC
+        `, [id]);
+        res.json({ success: true, prestamos });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Error al obtener historial del usuario' });
+    }
+});
+
 // 4. Crear un nuevo préstamo (Admin)
 app.post('/api/prestamo', verificarToken, async (req, res) => {
-    const { usuario_id, material_ids, fecha_limite, observaciones } = req.body;
+    const { usuario_id, material_ids, fecha_limite, observaciones, fecha_inicio } = req.body;
+    
     if (!usuario_id || !material_ids || !fecha_limite || material_ids.length === 0) {
         return res.status(400).json({ success: false, message: 'Faltan datos obligatorios' });
     }
+
+    // El estado inicial depende de quién pide: Admin/Operador = Abierto, Alumno/Otros = Pendiente
+    const esAdmin = req.userToken && (req.userToken.rol === 'Admin' || req.userToken.rol === 'Operador');
+    const estadoInicial = esAdmin ? 'Abierto' : 'Pendiente';
+
+    // Limpieza de fechas para MySQL (quitar la 'T' de datetime-local)
+    const fInicio = (fecha_inicio || '').replace('T', ' ') || new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const fLimite = (fecha_limite || '').replace('T', ' ');
+
     try {
+        console.log('📝 Intento de registro de préstamo. Usuario desde el Token:', req.userToken.id);
+
+        // 0. Inteligencia de ID (PARIDAD TOTAL PHP): 
+        // Usamos PRIMERO el ID que viene en el Token (es el más seguro y exacto)
+        const numeric_uid = req.userToken.id;
+
+        // Verificamos por seguridad que el usuario realmente siga existiendo
+        const userCheck = await query('SELECT nombre FROM usuario WHERE id = ?', [numeric_uid]);
+        if (userCheck.length === 0) {
+            return res.status(401).json({ success: false, message: 'Tu sesión es válida pero tu usuario ya no existe en el sistema.' });
+        }
+        console.log(`✅ Usuario autenticado: ${userCheck[0].nombre} (ID: ${numeric_uid})`);
+
+        // 1. Regla: Un solo préstamo activo/pendiente por usuario (para no-admins)
+        if (!esAdmin) {
+            const prestamosActivos = await query(
+                'SELECT id FROM prestamo WHERE usuario_id = ? AND estado_general IN ("Activo", "Prestado", "Pendiente", "Aprobado")',
+                [numeric_uid]
+            );
+            if (prestamosActivos.length > 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Ya tienes un préstamo activo o una solicitud pendiente. Finalízalo antes de pedir más.' 
+                });
+            }
+        }
+
+        // 2. Regla: Verificar si los materiales están en buen estado físico
+        const materialesMalEstado = await query(
+            'SELECT nombre FROM material WHERE id IN (?) AND (estado = "Roto" OR estado = "Mantenimiento")',
+            [material_ids]
+        );
+        if (materialesMalEstado.length > 0) {
+            const nombres = materialesMalEstado.map(m => m.nombre).join(', ');
+            return res.status(400).json({ 
+                success: false, 
+                message: `Los siguientes materiales no están disponibles por mantenimiento: ${nombres}` 
+            });
+        }
+
+        // 3. Inicio de Transacción
+        await query('START TRANSACTION');
+
         const resP = await query(
-            'INSERT INTO prestamo (usuario_id, fecha_solicitud, fecha_limite, estado_general, observaciones) VALUES (?, NOW(), ?, "Abierto", ?)',
-            [usuario_id, fecha_limite, observaciones || '']
+            'INSERT INTO prestamo (usuario_id, fecha_solicitud, fecha_inicio, fecha_limite, estado_general, observaciones) VALUES (?, NOW(), ?, ?, ?, ?)',
+            [numeric_uid, fInicio, fLimite, estadoInicial, observaciones || '']
         );
         const prestamoId = resP.insertId;
+
         for (const mId of material_ids) {
             await query('INSERT INTO detalle_prestamo (prestamo_id, material_id) VALUES (?, ?)', [prestamoId, mId]);
-            await query('UPDATE material SET disponible = "Ocupado" WHERE id = ?', [mId]);
+            // Paridad con PHP: Usamos 'Prestado' como estado de reserva
+            await query('UPDATE material SET disponible = "Prestado" WHERE id = ?', [mId]);
         }
-        res.json({ success: true, message: 'Préstamo registrado correctamente' });
+
+        await query('COMMIT');
+        res.json({ success: true, message: 'Préstamo solicitado correctamente', prestamoId });
+
     } catch (err) {
-        console.error('❌ Error POST /api/prestamo:', err);
-        res.status(500).json({ success: false, error: 'Error al registrar préstamo' });
+        if (connection) await query('ROLLBACK');
+        console.error('❌ Error Crítico POST /api/prestamo:', err);
+        res.status(500).json({ success: false, error: 'Error al registrar préstamo: ' + err.message });
+    }
+});
+
+// 4.1. Actualizar estatus de préstamo (Admin acepta/rechaza)
+app.put('/api/prestamo/:id/estatus', verificarToken, async (req, res) => {
+    const { id } = req.params;
+    const { estatus } = req.body; // 'Activo', 'Cancelado', etc.
+    const esAdmin = req.userToken && (req.userToken.rol === 'Admin' || req.userToken.rol === 'Operador');
+
+    if (!esAdmin) return res.status(403).json({ success: false, message: 'No tienes permisos para esta acción' });
+
+    try {
+        await query('UPDATE prestamo SET estado_general = ? WHERE id = ?', [estatus, id]);
+        res.json({ success: true, message: `Estado del préstamo #${id} actualizado a ${estatus}` });
+    } catch (err) {
+        console.error('❌ Error PUT /api/prestamo/estatus:', err);
+        res.status(500).json({ success: false, error: 'Error al actualizar estatus' });
     }
 });
 
@@ -729,24 +835,27 @@ app.put('/api/articulo/:id', verificarToken, upload.single('imagen'), async (req
 app.get('/api/perfil/historial', verificarToken, async (req, res) => {
     try {
         const usuario_id = req.userToken.id; 
+        if (!usuario_id) return res.status(401).json({ success: false, message: 'ID de usuario no encontrado en el token.' });
+
+        console.log('📜 Historial Solicitado - Usuario ID:', usuario_id);
+        
         const sql = `
             SELECT 
-                p.id, p.fecha_solicitud, p.fecha_limite, 
-                MAX(pm.fecha_entrega_real) as fecha_entrega, 
+                p.id, p.fecha_solicitud, p.fecha_limite, p.fecha_entrega,
                 p.estado_general, p.observaciones,
-                GROUP_CONCAT(m.nombre SEPARATOR ', ') AS materiales
+                IFNULL(GROUP_CONCAT(m.nombre SEPARATOR ', '), 'Sin materiales') AS materiales
             FROM prestamo p
-            LEFT JOIN detalle_prestamo pm ON p.id = pm.prestamo_id
-            LEFT JOIN material m ON pm.material_id = m.id
+            LEFT JOIN detalle_prestamo dp ON p.id = dp.prestamo_id
+            LEFT JOIN material m ON dp.material_id = m.id
             WHERE p.usuario_id = ?
             GROUP BY p.id
-            ORDER BY p.fecha_solicitud DESC
+            ORDER BY p.id DESC
         `;
         const results = await query(sql, [usuario_id]);
         res.json({ success: true, prestamos: results });
     } catch (err) {
-        console.error('❌ Error Historial:', err);
-        res.status(500).json({ success: false, error: 'Error al consultar historial' });
+        console.error('❌ Error Crítico Historial:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
